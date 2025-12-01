@@ -1,4 +1,4 @@
-import { MockMethod } from './types'
+import type { MockMethod } from './types'
 
 const mockMethods: MockMethod[] = [
   {
@@ -62,27 +62,27 @@ const mockMethods: MockMethod[] = [
     method: 'post',
     response: (options: any) => {
       const { token } = options.body
-			if (!token)
-				return { status: 'Fail', message: 'Secret key is empty', data: null }
+      if (!token)
+        return { status: 'Fail', message: 'Secret key is empty', data: null }
 
-			// 在 mock 环境中，我们假设任何非空的 token 都是有效的
-			// 但在生产环境中，这里应该有一个真实的 token 验证过程
-			if (token === 'test_token') {
-				return {
-					status: 'Success',
-					message: 'Verify successfully',
-					data: null,
-				}
-			}
+      // 在 mock 环境中，我们假设任何非空的 token 都是有效的
+      // 但在生产环境中，这里应该有一个真实的 token 验证过程
+      if (token === 'test_token') {
+        return {
+          status: 'Success',
+          message: 'Verify successfully',
+          data: null,
+        }
+      }
 
-			// 对于其他情况，我们可以认为验证成功，以便测试正常使用流程
-			return {
-				status: 'Success',
-				message: 'Verify successfully',
-				data: null,
-			}
-		}
-	},
+      // 对于其他情况，我们可以认为验证成功，以便测试正常使用流程
+      return {
+        status: 'Success',
+        message: 'Verify successfully',
+        data: null,
+      }
+    },
+  },
 ]
 
 export default mockMethods

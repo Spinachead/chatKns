@@ -19,7 +19,8 @@ function setupPlugins(env: ImportMetaEnv): PluginOption[] {
         ],
       },
     }),
-    viteMockServe({
+    // 通过环境变量控制是否启用mock
+    env.VITE_USE_MOCK === 'true' && viteMockServe({
       mockPath: 'mock',
       localEnabled: true,
     }),
