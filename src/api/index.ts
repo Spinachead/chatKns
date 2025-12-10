@@ -47,7 +47,7 @@ export function fetchChatAPIProcess<T = any>(
   }
 
   return post<T>({
-    url: '/kb_chat',
+    url: '/kb_chat2',
     data,
     signal: params.signal,
     onDownloadProgress: params.onDownloadProgress,
