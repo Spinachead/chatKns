@@ -113,38 +113,43 @@ async function onConversation() {
         onDownloadProgress: ({ event }) => {
           const xhr = event.target
           const { responseText } = xhr
-          // Always process the final line
-          const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
-          let chunk = responseText
-          if (lastIndex !== -1)
-            chunk = responseText.substring(lastIndex)
-          try {
-            const data = JSON.parse(chunk)
-            updateChat(
-              +uuid,
-              dataSources.value.length - 1,
-              {
-                dateTime: new Date().toLocaleString(),
-                text: lastText + (data.text ?? ''),
-                inversion: false,
-                error: false,
-                loading: true,
-                conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
-                requestOptions: { prompt: message, options: { ...options } },
-              },
-            )
+          console.log("这是responseText", responseText)
+            
+          // 处理SSE格式的数据 (data: {...})
+          const lines = responseText.split('\n')
+          for (const line of lines) {
+            if (line.startsWith('data:')) {
+              try {
+                const dataStr = line.substring(5).trim()
+                const data = JSON.parse(dataStr)
+                  
+                updateChat(
+                  +uuid,
+                  dataSources.value.length - 1,
+                  {
+                    dateTime: new Date().toLocaleString(),
+                    text: lastText + (data.choices[0]?.delta?.content ?? ''),
+                    inversion: false,
+                    error: false,
+                    loading: true,
+                    conversationOptions: { conversationId: data.conversationId, parentMessageId: data.message_id },
+                    requestOptions: { prompt: message, options: { ...options } },
+                  },
+                )
 
-            if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
-              options.parentMessageId = data.id
-              lastText = data.text
-              message = ''
-              return fetchChatAPIOnce()
+                if (openLongReply && data.choices[0]?.finish_reason === 'length') {
+                  options.parentMessageId = data.message_id
+                  lastText = data.choices[0]?.delta?.content ?? ''
+                  message = ''
+                  return fetchChatAPIOnce()
+                }
+
+                scrollToBottomIfAtBottom()
+              }
+              catch (error) {
+                //
+              }
             }
-
-            scrollToBottomIfAtBottom()
-          }
-          catch (error) {
-            //
           }
         },
       })
@@ -244,40 +249,49 @@ async function onRegenerate(index: number) {
         onDownloadProgress: ({ event }) => {
           const xhr = event.target
           const { responseText } = xhr
-          // Always process the final line
-          const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
-          let chunk = responseText
-          if (lastIndex !== -1)
-            chunk = responseText.substring(lastIndex)
-          try {
-            const data = JSON.parse(chunk)
-            updateChat(
-              +uuid,
-              index,
-              {
-                dateTime: new Date().toLocaleString(),
-                text: lastText + (data.text ?? ''),
-                inversion: false,
-                error: false,
-                loading: true,
-                conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
-                requestOptions: { prompt: message, options: { ...options } },
-              },
-            )
+          console.log("这是responseText", responseText)
+          
+          // 处理SSE格式的数据 (data: {...})
+          const lines = responseText.split('\n')
+          for (const line of lines) {
+            if (line.startsWith('data:')) {
+              try {
+                const dataStr = line.substring(5).trim()
+                const data = JSON.parse(dataStr)
+                
+                updateChat(
+                  +uuid,
+                  index,
+                  {
+                    dateTime: new Date().toLocaleString(),
+                    text: lastText + (data.choices[0]?.delta?.content ?? ''),
+                    inversion: false,
+                    error: false,
+                    loading: true,
+                    conversationOptions: { conversationId: data.conversationId, parentMessageId: data.message_id },
+                    requestOptions: { prompt: message, options: { ...options } },
+                  },
+                )
 
-            if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
-              options.parentMessageId = data.id
-              lastText = data.text
-              message = ''
-              return fetchChatAPIOnce()
+                if (openLongReply && data.choices[0]?.finish_reason === 'length') {
+                  options.parentMessageId = data.message_id
+                  lastText = data.choices[0]?.delta?.content ?? ''
+                  message = ''
+                  return fetchChatAPIOnce()
+                }
+
+                scrollToBottomIfAtBottom()
+              }
+              catch (error) {
+                //
+              }
             }
-          }
-          catch (error) {
-            //
           }
         },
       })
       updateChatSome(+uuid, index, { loading: false })
+    }
+    await fetchChatAPIOnce()
     }
     await fetchChatAPIOnce()
   }

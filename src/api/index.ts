@@ -33,6 +33,8 @@ export function fetchChatAPIProcess<T = any>(
   let data: Record<string, any> = {
     prompt: params.prompt,
     options: params.options,
+    query: params.prompt,
+    kb_name: 'samples',
   }
 
   if (authStore.isChatGPTAPI) {
@@ -45,7 +47,7 @@ export function fetchChatAPIProcess<T = any>(
   }
 
   return post<T>({
-    url: '/chat-process',
+    url: '/kb_chat',
     data,
     signal: params.signal,
     onDownloadProgress: params.onDownloadProgress,
