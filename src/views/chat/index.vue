@@ -113,11 +113,10 @@ async function onConversation() {
         onDownloadProgress: ({ event }) => {
           const xhr = event.target
           const { responseText } = xhr
-          console.log("这是responseText", responseText)
-					//测试提交
-          // 处理SSE格式的数据 (data: {...})
+          // console.log("这是responseText", responseText)
           const lines = responseText.split('\n')
           for (const line of lines) {
+						console.log("这是line", line)
             if (line.startsWith('data:')) {
               try {
                 const dataStr = line.substring(5).trim()
@@ -290,8 +289,6 @@ async function onRegenerate(index: number) {
         },
       })
       updateChatSome(+uuid, index, { loading: false })
-    }
-    await fetchChatAPIOnce()
     }
     await fetchChatAPIOnce()
   }
