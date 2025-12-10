@@ -114,7 +114,7 @@ async function onConversation() {
           const xhr = event.target
           const { responseText } = xhr
           console.log("这是responseText", responseText)
-            
+					//测试提交
           // 处理SSE格式的数据 (data: {...})
           const lines = responseText.split('\n')
           for (const line of lines) {
@@ -122,7 +122,7 @@ async function onConversation() {
               try {
                 const dataStr = line.substring(5).trim()
                 const data = JSON.parse(dataStr)
-                  
+
                 updateChat(
                   +uuid,
                   dataSources.value.length - 1,
@@ -250,7 +250,7 @@ async function onRegenerate(index: number) {
           const xhr = event.target
           const { responseText } = xhr
           console.log("这是responseText", responseText)
-          
+
           // 处理SSE格式的数据 (data: {...})
           const lines = responseText.split('\n')
           for (const line of lines) {
@@ -258,7 +258,7 @@ async function onRegenerate(index: number) {
               try {
                 const dataStr = line.substring(5).trim()
                 const data = JSON.parse(dataStr)
-                
+
                 updateChat(
                   +uuid,
                   index,
