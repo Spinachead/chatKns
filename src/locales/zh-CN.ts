@@ -98,4 +98,8 @@ export default {
     onlineImportWarning: '注意：请检查 JSON 文件来源！',
     downloadError: '请检查网络状态与 JSON 文件有效性',
   },
+	knowledge: {
+		manage: '知识库管理',
+
+	}
 }

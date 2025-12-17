@@ -93,6 +93,11 @@ watch(
             {{ $t('chat.newChatButton') }}
           </NButton>
         </div>
+				<div class="pl-4 pr-4 pb-4">
+					<NButton  block @click="handleAdd">
+						{{ $t('knowledge.manage') }}
+					</NButton>
+				</div>
         <div class="flex-1 min-h-0 pb-4 overflow-hidden">
           <List />
         </div>
