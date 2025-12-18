@@ -98,8 +98,13 @@ export default {
     onlineImportWarning: '注意：请检查 JSON 文件来源！',
     downloadError: '请检查网络状态与 JSON 文件有效性',
   },
-	knowledge: {
-		manage: '知识库管理',
-
-	}
+  knowledge: {
+    manage: '知识库管理',
+    dragUpload: '点击或者拖动文件到该区域来上传',
+    clickUpload: '点击上传',
+    fileList: '已上传文件列表',
+    deleteConfirm: '确定要删除这个文件吗？',
+    noFiles: '还没有上传任何文件',
+		create: '新建知识库',
+  }
 }

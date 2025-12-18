@@ -66,3 +66,42 @@ export function fetchVerify<T>(token: string) {
     data: { token },
   })
 }
+
+export function fetchUploadFile<T = any>(
+  params: {
+    files: File | FileList | (File | null)[]
+    knowledge_base_name: string
+  }
+) {
+  const formData = new FormData()
+  formData.append('knowledge_base_name', params.knowledge_base_name)
+
+  // Handle different file input types
+  if (params.files instanceof FileList) {
+    for (let i = 0; i < params.files.length; i++) {
+      formData.append('files', params.files[i])
+    }
+		console.log(1);
+  } else if (params.files instanceof File) {
+    formData.append('files', params.files)
+		console.log(2);
+  } else if (Array.isArray(params.files)) {
+    params.files.forEach(file => {
+      if (file) {
+        formData.append('files', file)
+      }
+    })
+		console.log(3);
+  }else {
+		console.log(4);
+		console.log(params.files);
+	}
+
+  return post<T>({
+    url: '/upload_docs',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+}

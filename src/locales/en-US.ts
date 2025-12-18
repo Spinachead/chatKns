@@ -98,4 +98,12 @@ export default {
     onlineImportWarning: 'Note: Please check the JSON file source!',
     downloadError: 'Please check the network status and JSON file validity',
   },
+  knowledge: {
+    manage: 'Knowledge Management',
+    dragUpload: 'Click or drag file to this area to upload',
+    clickUpload: 'Click to Upload',
+    fileList: 'Uploaded Files',
+    deleteConfirm: 'Are you sure you want to delete this file?',
+    noFiles: 'No files uploaded yet'
+  }
 }

@@ -8,9 +8,11 @@ import { useAppStore, useChatStore } from '@/store'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { PromptStore, SvgIcon } from '@/components/common'
 import { t } from '@/locales'
+import { useRouter } from 'vue-router'
 
 const appStore = useAppStore()
 const chatStore = useChatStore()
+const router = useRouter()
 
 const dialog = useDialog()
 
@@ -23,6 +25,10 @@ function handleAdd() {
   chatStore.addHistory({ title: t('chat.newChatTitle'), uuid: Date.now(), isEdit: false })
   if (isMobile.value)
     appStore.setSiderCollapsed(true)
+}
+
+function toKnowledge() {
+  router.push({ name: 'Knowledge' })
 }
 
 function handleUpdateCollapsed() {
@@ -94,7 +100,7 @@ watch(
           </NButton>
         </div>
 				<div class="pl-4 pr-4 pb-4">
-					<NButton  block @click="handleAdd">
+					<NButton  block @click="toKnowledge">
 						{{ $t('knowledge.manage') }}
 					</NButton>
 				</div>
