@@ -126,6 +126,7 @@ function createSubmit() {
 }
 const intValue = ref(0)
 const active = ref(false)
+const pagination = {pageSize: 10}
 </script>
 
 <template>
@@ -183,6 +184,12 @@ const active = ref(false)
 								<NSwitch v-model:value="active" />
 							</div>
 						</div>
+					</div>
+
+					<div class="overflow-y-auto pt-4">
+						<div class="text-lg font-bold mb-4">文件处理配置</div>
+						<NDataTable :bordered="true" :pagination="pagination"></NDataTable>
+
 					</div>
 
         </div>
