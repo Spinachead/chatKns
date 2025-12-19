@@ -86,7 +86,7 @@ export function fetchUploadFile<T = any>(
 
 export function fetchListKnowledgeBases<T = any>() {
 	return post<T>({
-		url: 'api/list_knowledge_bases',
+		url: 'list_knowledge_bases',
 	})
 }
 
@@ -106,7 +106,7 @@ export function createKnowledgeBase<T = any>(
 	}
 
 	return post<T>({
-		url: 'api/create_knowledge_base',
+		url: 'create_knowledge_base',
 		data: data
 	})
 }
@@ -121,7 +121,7 @@ export function deleteKnowledgeBase<T = any>(
 	}
 
 	return post<T>({
-		url: 'api/delete_knowledge_base',
+		url: 'delete_knowledge_base',
 		data: data
 	})
 }

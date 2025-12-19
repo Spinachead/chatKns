@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, ref} from 'vue'
+import {onMounted, ref, computed} from 'vue'
 import {
 	NCard,
 	NUpload,
@@ -121,16 +121,9 @@ const tableData = ref([
 	}
 ])
 
-const baseOptions = [
-	{
-		label: 'samples',
-		value: 'samples'
-	},
-	{
-		label: '公司助手',
-		value: '公司助手'
-	},
-]
+const baseOptions = ref([])
+
+
 
 const faissOptions = [
 	{
@@ -182,11 +175,25 @@ function createSubmit() {
 	})
 }
 
+
+// // 创建一个计算属性来转换 baseOptions 的格式
+// const formattedBaseOptions = computed(() => {
+// 	return baseOptions.value.map(item => ({
+// 		label: item.kb_name,
+// 		value: item.id
+// 	}))
+// })
+
 function fetchKnowledgeBase() {
 	fetchListKnowledgeBases().then(res => {
-		console.log(res)
+		console.log("res.data", res.data)
+		baseOptions.value = res.data.map(item => ({
+			label: item.kb_name,
+			value: item.id
+		}))
 	}).catch(err => {
-		console.log(err)
+		console.log("这是error", err)
+
 	})
 }
 
@@ -204,7 +211,7 @@ onMounted(() => {
 					<NButton @click="showCreate = true" type="primary">新建知识库</NButton>
 					<div class="flex items-center">
 						<div>当前知识库：</div>
-						<NSelect v-model:value="currentKnowledgeBase" :options="baseOptions" style="width: 200px"></NSelect>
+						<NSelect v-model:value="currentKnowledgeBase" :options="formattedBaseOptions" style="width: 200px"></NSelect>
 					</div>
 					<NButton @click="showCreate = true" type="error">删除知识库</NButton>
 				</div>

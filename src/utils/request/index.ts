@@ -17,6 +17,8 @@ export interface Response<T = any> {
   data: T
   message: string | null
   status: string
+	code: number
+	msg: string
 }
 
 function http<T = any>(
@@ -25,7 +27,7 @@ function http<T = any>(
   const successHandler = (res: AxiosResponse<Response<T>>) => {
     const authStore = useAuthStore()
 
-    if (res.data.status === 'Success' || typeof res.data === 'string')
+    if (res.data.status === 'Success' || typeof res.data === 'string' || res.data.code === 200)
       return res.data
 
     if (res.data.status === 'Unauthorized') {
