@@ -1,5 +1,5 @@
 import type { AxiosProgressEvent, GenericAbortSignal } from 'axios'
-import { post } from '@/utils/request'
+import {get, post} from '@/utils/request'
 import { useAuthStore, useSettingStore } from '@/store'
 
 export function fetchChatAPI<T = any>(
@@ -123,5 +123,19 @@ export function deleteKnowledgeBase<T = any>(
 	return post<T>({
 		url: 'delete_knowledge_base',
 		data: data
+	})
+}
+
+export function fetchListFiles<T = any>(
+	params:{
+		knowledge_base_name: string
+	}
+) {
+	let data: Record<string, any> = {
+		knowledge_base_name: params.knowledge_base_name
+	}
+	return get<T>({
+		url: 'list_files',
+		data: data  // 这些数据会作为查询参数附加到 URL 上
 	})
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, ref, computed} from 'vue'
+import {onMounted, ref, computed, h} from 'vue'
 import {
 	NCard,
 	NUpload,
@@ -15,12 +15,18 @@ import {
 	FormRules,
 	NModal,
 	NInputNumber,
-	NDataTable
+	NDataTable,
+	UploadFileInfo
 } from 'naive-ui'
 import {UploadFilled} from '@vicons/material'
 import {t} from '@/locales'
-import {fetchListKnowledgeBases, fetchUploadFile} from "@/api";
+import {fetchListFiles, fetchListKnowledgeBases} from "@/api";
 import {useMessage} from 'naive-ui'
+
+onMounted(() => {
+	fetchKnowledgeBase()
+	baseListFiles()
+})
 
 interface ModelType {
 	knowledge_base_name: string | null
@@ -48,83 +54,76 @@ const modelRef = ref<ModelType>({
 	type: null,
 	embedding_model: null
 })
+const baseOptions = ref([])
+const fileList = ref<UploadFileInfo[]>([])
 
 // 表格列定义
 const columns = [
 	{
 		title: "序号",
-		key: "index"
+		key: "No"
 	},
 	{
 		title: "文档名称",
-		key: "fileName"
+		key: "file_name",
+		align: "center"
 	},
 	{
 		title: "文档加载器",
-		key: "loader"
+		key: "document_loader",
+		align: "center"
 	},
 	{
 		title: "分词器",
-		key: "tokenizer"
+		key: "text_splitter",
+		align: "center"
 	},
 	{
 		title: "文档数量",
-		key: "docCount"
+		key: "docs_count",
+		align: "center"
 	},
 	{
 		title: "源文件",
-		key: "source"
+		key: "in_folder",
+		align: "center",
+
+	},
+	{
+		title: "向量库",
+		key: "in_db",
+		align: "center"
+	},
+	{
+		title: "操作",
+		key: "action",
+		align: "center",
+		render: (record: any) => {
+			return h(
+				"div",
+				{
+					class: "flex, justify-between"
+				},
+				[
+					h(
+						NButton,
+						{
+							type: "primary",
+							size: "small",
+							onClick: () => {
+								console.log("下载")
+							}
+						},
+						{
+							default: () => "下载"
+						}
+					)
+				]
+			)
+		}
 	}
 ]
-
-// 表格数据
-const tableData = ref([
-	{
-		index: 1,
-		fileName: "公司介绍文档.pdf",
-		loader: "PDFLoader",
-		tokenizer: "jieba",
-		docCount: 128,
-		source: "本地上传"
-	},
-	{
-		index: 2,
-		fileName: "产品说明书.docx",
-		loader: "DocxLoader",
-		tokenizer: "pkuseg",
-		docCount: 96,
-		source: "系统生成"
-	},
-	{
-		index: 3,
-		fileName: "FAQ.txt",
-		loader: "TextLoader",
-		tokenizer: "THULAC",
-		docCount: 256,
-		source: "手动录入"
-	},
-	{
-		index: 4,
-		fileName: "API文档.html",
-		loader: "HTMLLoader",
-		tokenizer: "StanfordSegmenter",
-		docCount: 64,
-		source: "网页抓取"
-	},
-	{
-		index: 5,
-		fileName: "用户反馈.xlsx",
-		loader: "ExcelLoader",
-		tokenizer: "HanLP",
-		docCount: 201,
-		source: "数据导入"
-	}
-])
-
-const baseOptions = ref([])
-
-
-
+const tableData = ref([])
 const faissOptions = [
 	{
 		label: 'faiss',
@@ -135,7 +134,6 @@ const faissOptions = [
 		value: 'chromadb'
 	},
 ]
-
 const embeddingOptions = [
 	{
 		label: 'bg-em3',
@@ -151,15 +149,34 @@ const embeddingOptions = [
 	}
 ]
 
-const handleUpload = (options: { file: any }) => {
-	const {file} = options
-	fetchUploadFile(
-		{files: file.file, knowledge_base_name: 'samples'}
-	).then(res => {
-		console.log(res)
-	}).catch(err => {
-		console.log(err)
-	})
+
+const handleUpload = (options: { file: UploadFileInfo }) => {
+	// 实际的上传逻辑
+	console.log("Uploading file:", options.file)
+	// 这里可以调用 fetchUploadFile 或其他上传 API
+}
+
+// 添加文件校验函数
+const beforeUpload = (data: { file: UploadFileInfo; fileList: UploadFileInfo[] }) => {
+	const { file } = data
+
+	// 校验文件大小 (例如限制为 10MB)
+	const maxSize = 10 * 1024 * 1024
+	if (file.file?.size > maxSize) {
+		message.error(t('knowledge.fileSizeExceeded'))
+		return false
+	}
+
+	// 校验文件格式 (允许的格式)
+	const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt', '.md']
+	const fileName = file.name.toLowerCase()
+	const isAllowedExtension = allowedExtensions.some(ext => fileName.endsWith(ext))
+
+	if (!isAllowedExtension) {
+		message.error(t('knowledge.fileTypeNotAllowed'))
+		return false
+	}
+	return true
 }
 
 function createSubmit() {
@@ -175,31 +192,34 @@ function createSubmit() {
 	})
 }
 
+// 创建一个计算属性来转换 baseOptions 的格式
+const formattedBaseOptions = computed(() => {
+	const options = baseOptions.value.map((item: any) => ({
+		label: item.kb_name,
+		value: item.id
+	}))
+	// 如果还没有选中任何项且有选项可用，则默认选中第一个
+	if (options.length > 0 && currentKnowledgeBase.value === null) {
+		currentKnowledgeBase.value = options[0].value
+	}
+	return options
+})
 
-// // 创建一个计算属性来转换 baseOptions 的格式
-// const formattedBaseOptions = computed(() => {
-// 	return baseOptions.value.map(item => ({
-// 		label: item.kb_name,
-// 		value: item.id
-// 	}))
-// })
 
 function fetchKnowledgeBase() {
 	fetchListKnowledgeBases().then(res => {
-		console.log("res.data", res.data)
-		baseOptions.value = res.data.map(item => ({
-			label: item.kb_name,
-			value: item.id
-		}))
-	}).catch(err => {
-		console.log("这是error", err)
-
+		baseOptions.value = res.data
 	})
 }
 
-onMounted(() => {
-	fetchKnowledgeBase()
-})
+function baseListFiles() {
+	fetchListFiles({knowledge_base_name: "samples"}).then(res => {
+		console.log(res.data)
+		tableData.value = res.data
+	}).catch(err => {
+		console.log(err)
+	})
+}
 
 </script>
 
@@ -221,7 +241,9 @@ onMounted(() => {
 					<NUpload
 						class="mb-6"
 						:custom-request="handleUpload"
-						:max="1"
+						:max="3"
+						v-model:file-list="fileList"
+						@before-upload="beforeUpload"
 						@finish="() => {}"
 					>
 						<NUploadDragger>
@@ -265,9 +287,8 @@ onMounted(() => {
 
 					<div class="overflow-y-auto pt-4">
 						<div class="text-lg font-bold mb-4">知识库中已有文件</div>
-						<NDataTable :columns="columns" :data="tableData" :bordered="true" :pagination="pagination"></NDataTable>
+						<NDataTable :columns="columns" :data="tableData" :bordered="true" :pagination="pagination" striped></NDataTable>
 					</div>
-
 				</div>
 				<NModal v-model:show="showCreate" preset="dialog" positive-text="确定" negative-text="取消"
 								@positive-click="createSubmit" :show-icon="false">
