@@ -73,35 +73,55 @@ export function fetchUploadFile<T = any>(
     knowledge_base_name: string
   }
 ) {
-  const formData = new FormData()
-  formData.append('knowledge_base_name', params.knowledge_base_name)
-
-  // Handle different file input types
-  if (params.files instanceof FileList) {
-    for (let i = 0; i < params.files.length; i++) {
-      formData.append('files', params.files[i])
-    }
-		console.log(1);
-  } else if (params.files instanceof File) {
-    formData.append('files', params.files)
-		console.log(2);
-  } else if (Array.isArray(params.files)) {
-    params.files.forEach(file => {
-      if (file) {
-        formData.append('files', file)
-      }
-    })
-		console.log(3);
-  }else {
-		console.log(4);
-		console.log(params.files);
-	}
+	let data: Record<any, any> = {
+		files: params.files,
+		knowledge_base_name: params.knowledge_base_name,
+  }
 
   return post<T>({
     url: '/upload_docs',
-    data: formData,
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+    data: data,
   })
+}
+
+export function fetchListKnowledgeBases<T = any>() {
+	return post<T>({
+		url: 'api/list_knowledge_bases',
+	})
+}
+
+export function createKnowledgeBase<T = any>(
+	params: {
+		knowledge_base_name: string,
+		vector_store_type: string,
+		kb_info: string,
+		embed_model: string
+	}
+){
+	let data: Record<string, any> = {
+		knowledge_base_name: params.knowledge_base_name,
+		vector_store_type: params.vector_store_type,
+		kb_info: params.kb_info,
+		embed_model: params.embed_model
+	}
+
+	return post<T>({
+		url: 'api/create_knowledge_base',
+		data: data
+	})
+}
+
+export function deleteKnowledgeBase<T = any>(
+	params: {
+		knowledge_base_name: string
+	}
+){
+	let data: Record<string, any> = {
+		knowledge_base_name: params.knowledge_base_name
+	}
+
+	return post<T>({
+		url: 'api/delete_knowledge_base',
+		data: data
+	})
 }
