@@ -16,11 +16,19 @@ import {
 	NModal,
 	NInputNumber,
 	NDataTable,
-	UploadFileInfo
+	UploadFileInfo,
+	NPopconfirm
 } from 'naive-ui'
 import {UploadFilled} from '@vicons/material'
 import {t} from '@/locales'
-import {createKnowledgeBase, fetchListFiles, fetchListKnowledgeBases, fetchUploadFile} from "@/api";
+import {
+	createKnowledgeBase,
+	deleteKnowledgeBase,
+	fetchDeleteDocs,
+	fetchListFiles,
+	fetchListKnowledgeBases,
+	fetchUploadFile
+} from "@/api";
 import {useMessage} from 'naive-ui'
 
 onMounted(() => {
@@ -124,7 +132,7 @@ const columns = [
 							type: "error",
 							size: "small",
 							onClick: () => {
-								console.log("删除")
+								deleteDocs(record)
 							}
 						},
 						{
@@ -250,8 +258,6 @@ function fetchKnowledgeBase() {
 //获取知识库内文件
 function baseListFiles() {
 	const base_name = currentKnowledgeBase.value === null ? 'samples' : currentKnowledgeBase.value
-	console.log("这是当前知识库:", base_name)
-
 	fetchListFiles({knowledge_base_name: base_name}).then(res => {
 		tableData.value = res.data
 	}).catch(err => {
@@ -259,12 +265,12 @@ function baseListFiles() {
 	})
 }
 
+//添加文件到知识库
 function uploadFiles() {
 	// 从 fileList 中提取实际的 File 对象
 	const files = fileList.value
 		.map(item => item.file)
 		.filter(file => file !== undefined) as File[];
-	console.log("这是上传的文件:", files)
 
 	fetchUploadFile({
 		files: files,
@@ -279,6 +285,34 @@ function uploadFiles() {
 		console.log(err)
 	})
 }
+
+//删除知识库中的文件
+function deleteDocs(item: any) {
+	console.log("删除文件:", item)
+	fetchDeleteDocs({
+		knowledge_base_name: currentKnowledgeBase.value,
+		file_names: [item.file_name],
+		delete_content: true,
+		not_refresh_vs_cache: true
+	}).then(res => {
+		message.success(res.msg)
+		baseListFiles()
+	})
+}
+
+function deleteKnBase() {
+	deleteKnowledgeBase({
+		knowledge_base_name: currentKnowledgeBase.value
+	}).then(res => {
+		message.success(res.msg)
+		currentKnowledgeBase.value = null
+		fetchKnowledgeBase()
+	}).catch(err => {
+		message.error(err.msg)
+		console.log(err)
+	})
+
+}
 </script>
 
 <template>
@@ -292,7 +326,14 @@ function uploadFiles() {
 						<NSelect v-model:value="currentKnowledgeBase" :options="formattedBaseOptions"
 										 :on-update-value="baseListFiles" style="width: 200px"></NSelect>
 					</div>
-					<NButton @click="showCreate = true" type="error">删除知识库</NButton>
+					<NPopconfirm @positive-click="deleteKnBase">
+						<template #trigger>
+							<NButton type="error">删除知识库</NButton>
+						</template>
+						<template #default>
+							<div>确定要删除当前知识库吗？ 删除后该知识库内所有文件将被删除</div>
+						</template>
+					</NPopconfirm>
 				</div>
 
 				<div class="flex flex-col h-full pt-4">

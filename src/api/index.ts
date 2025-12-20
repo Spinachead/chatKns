@@ -68,28 +68,49 @@ export function fetchVerify<T>(token: string) {
 }
 
 export function fetchUploadFile<T = any>(
-  params: {
-    files: File | FileList | (File | null)[]
-    knowledge_base_name: string
+	params: {
+		files: File | FileList | (File | null)[]
+		knowledge_base_name: string
 		chunk_size: number,
 		chunk_overlap: number,
 		zh_title_enhance: boolean
-  }
+	}
 ) {
-	console.log("这是param中的files", params.files)
-	let data: Record<any, any> = {
-		files: params.files,
-		knowledge_base_name: params.knowledge_base_name,
-		chunk_size: params.chunk_size,
-		chunk_overlap: params.chunk_overlap,
-		zh_title_enhance: params.zh_title_enhance
-  }
-	console.log("这是data", data)
-  return post<T>({
-    url: '/upload_docs',
-    data: data,
-  })
+	const formData = new FormData();
+
+	// 处理不同类型的 files 参数
+	if (params.files instanceof File) {
+		formData.append('files', params.files);
+	} else if (params.files instanceof FileList) {
+		for (let i = 0; i < params.files.length; i++) {
+			if (params.files[i]) {
+				formData.append('files', params.files[i] as File);
+			}
+		}
+	} else if (Array.isArray(params.files)) {
+		params.files.forEach(file => {
+			if (file) {
+				formData.append('files', file);
+			}
+		});
+	}
+
+	formData.append('knowledge_base_name', params.knowledge_base_name);
+	formData.append('chunk_size', params.chunk_size.toString());
+	formData.append('chunk_overlap', params.chunk_overlap.toString());
+	formData.append('zh_title_enhance', params.zh_title_enhance.toString());
+
+	console.log("这是formdata中的files", formData.getAll('files'));
+
+	return post<T>({
+		url: '/upload_docs',
+		data: formData,
+		headers: {
+			'Content-Type': 'multipart/form-data'
+		}
+	})
 }
+
 
 export function fetchListKnowledgeBases<T = any>() {
 	return post<T>({
@@ -126,6 +147,7 @@ export function deleteKnowledgeBase<T = any>(
 	let data: Record<string, any> = {
 		knowledge_base_name: params.knowledge_base_name
 	}
+	console.log("这是删除的参数", data)
 
 	return post<T>({
 		url: 'delete_knowledge_base',
@@ -144,5 +166,25 @@ export function fetchListFiles<T = any>(
 	return get<T>({
 		url: 'list_files',
 		data: data  // 这些数据会作为查询参数附加到 URL 上
+	})
+}
+
+export function fetchDeleteDocs<T = any>(
+	params:{
+		knowledge_base_name: string,
+		file_names: string [],
+		delete_content: boolean,
+		not_refresh_vs_cache: boolean
+	}
+) {
+	let data: Record<string, any> = {
+		knowledge_base_name: params.knowledge_base_name,
+		file_names: params.file_names,
+		delete_content: params.delete_content,
+		not_refresh_vs_cache: params.not_refresh_vs_cache
+	}
+	return post<T>({
+		url: 'delete_docs',
+		data: data
 	})
 }
