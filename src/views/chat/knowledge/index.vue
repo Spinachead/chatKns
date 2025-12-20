@@ -25,7 +25,6 @@ import {useMessage} from 'naive-ui'
 
 onMounted(() => {
 	fetchKnowledgeBase()
-	baseListFiles()
 })
 
 interface ModelType {
@@ -37,7 +36,7 @@ interface ModelType {
 
 const chunkSize = ref(750)
 const chunkOverlap = ref(150)
-const active = ref(false)
+const zh_title_enhance = ref(false)
 const pagination = {pageSize: 10}
 const message = useMessage()
 const showCreate = ref(false)
@@ -172,7 +171,7 @@ const handleUpload = (options: { file: UploadFileInfo }) => {
 
 // 添加文件校验函数
 const beforeUpload = (data: { file: UploadFileInfo; fileList: UploadFileInfo[] }) => {
-	const { file } = data
+	const {file} = data
 
 	// 校验文件大小 (例如限制为 10MB)
 	const maxSize = 10 * 1024 * 1024
@@ -205,8 +204,8 @@ function createSubmit(e: MouseEvent) {
 			}).then(res => {
 				currentKnowledgeBase.value = modelRef.value.knowledge_base_name
 				message.success(res.msg)
-				fetchKnowledgeBase()
 				baseListFiles()
+				fetchKnowledgeBase()
 				closeCreateForm()
 			})
 		} else {
@@ -231,7 +230,7 @@ function closeCreateForm() {
 const formattedBaseOptions = computed(() => {
 	const options = baseOptions.value.map((item: any) => ({
 		label: item.kb_name,
-		value: item.id
+		value: item.kb_name
 	}))
 	// 如果还没有选中任何项且有选项可用，则默认选中第一个
 	if (options.length > 0 && currentKnowledgeBase.value === null) {
@@ -244,14 +243,38 @@ const formattedBaseOptions = computed(() => {
 function fetchKnowledgeBase() {
 	fetchListKnowledgeBases().then(res => {
 		baseOptions.value = res.data
+		baseListFiles()
 	})
 }
 
 //获取知识库内文件
 function baseListFiles() {
-	console.log("这是当前知识库:", currentKnowledgeBase.value)
-	fetchListFiles({knowledge_base_name: currentKnowledgeBase.value}).then(res => {
+	const base_name = currentKnowledgeBase.value === null ? 'samples' : currentKnowledgeBase.value
+	console.log("这是当前知识库:", base_name)
+
+	fetchListFiles({knowledge_base_name: base_name}).then(res => {
 		tableData.value = res.data
+	}).catch(err => {
+		console.log(err)
+	})
+}
+
+function uploadFiles() {
+	// 从 fileList 中提取实际的 File 对象
+	const files = fileList.value
+		.map(item => item.file)
+		.filter(file => file !== undefined) as File[];
+	console.log("这是上传的文件:", files)
+
+	fetchUploadFile({
+		files: files,
+		knowledge_base_name: currentKnowledgeBase.value,
+		chunk_size: chunkSize.value,
+		chunk_overlap: chunkOverlap.value,
+		zh_title_enhance: zh_title_enhance.value
+	}).then(res => {
+		message.success(res.msg)
+		baseListFiles()
 	}).catch(err => {
 		console.log(err)
 	})
@@ -266,7 +289,8 @@ function baseListFiles() {
 					<NButton @click="showCreate = true" type="primary">新建知识库</NButton>
 					<div class="flex items-center">
 						<div>当前知识库：</div>
-						<NSelect v-model:value="currentKnowledgeBase" :options="formattedBaseOptions" style="width: 200px"></NSelect>
+						<NSelect v-model:value="currentKnowledgeBase" :options="formattedBaseOptions"
+										 :on-update-value="baseListFiles" style="width: 200px"></NSelect>
 					</div>
 					<NButton @click="showCreate = true" type="error">删除知识库</NButton>
 				</div>
@@ -312,21 +336,22 @@ function baseListFiles() {
 							</div>
 							<div class="flex items-center">
 								<div class="pr-3">开启中文标题加强:</div>
-								<NSwitch v-model:value="active"/>
+								<NSwitch v-model:value="zh_title_enhance"/>
 							</div>
 						</div>
 					</div>
 					<div class="overflow-y-auto pt-8 w-full flex justify-center">
-						<NButton type="primary" size="large">添加到知识库</NButton>
+						<NButton type="primary" size="large" @click="uploadFiles">添加到知识库</NButton>
 					</div>
 
 					<div class="overflow-y-auto pt-4">
 						<div class="text-lg font-bold mb-4">知识库中已有文件</div>
-						<NDataTable :columns="columns" :data="tableData" :bordered="true" :pagination="pagination" striped></NDataTable>
+						<NDataTable :columns="columns" :data="tableData" :bordered="true" :pagination="pagination"
+												striped></NDataTable>
 					</div>
 				</div>
 				<NModal v-model:show="showCreate">
-					<NCard title="新建知识库" style="width: 600px" :bordered="true" >
+					<NCard title="新建知识库" style="width: 600px" :bordered="true">
 						<NForm ref="formRef" :model="modelRef" :rules="rules">
 							<NFormItem path="knowledge_base_name" label="新建知识库名称">
 								<NInput v-model:value="modelRef.knowledge_base_name" placeholder="暂不支持中文" @keydown.enter.prevent/>

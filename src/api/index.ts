@@ -71,13 +71,20 @@ export function fetchUploadFile<T = any>(
   params: {
     files: File | FileList | (File | null)[]
     knowledge_base_name: string
+		chunk_size: number,
+		chunk_overlap: number,
+		zh_title_enhance: boolean
   }
 ) {
+	console.log("这是param中的files", params.files)
 	let data: Record<any, any> = {
 		files: params.files,
 		knowledge_base_name: params.knowledge_base_name,
+		chunk_size: params.chunk_size,
+		chunk_overlap: params.chunk_overlap,
+		zh_title_enhance: params.zh_title_enhance
   }
-
+	console.log("这是data", data)
   return post<T>({
     url: '/upload_docs',
     data: data,
