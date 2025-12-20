@@ -20,7 +20,7 @@ import {
 } from 'naive-ui'
 import {UploadFilled} from '@vicons/material'
 import {t} from '@/locales'
-import {fetchListFiles, fetchListKnowledgeBases} from "@/api";
+import {createKnowledgeBase, fetchListFiles, fetchListKnowledgeBases, fetchUploadFile} from "@/api";
 import {useMessage} from 'naive-ui'
 
 onMounted(() => {
@@ -29,10 +29,10 @@ onMounted(() => {
 })
 
 interface ModelType {
-	knowledge_base_name: string | null
-	description: string | null
-	type: string | null
-	embedding_model: string | null
+	knowledge_base_name: string
+	kb_info: string
+	vector_store_type: string
+	embedding_model: string
 }
 
 const chunkSize = ref(750)
@@ -44,15 +44,15 @@ const showCreate = ref(false)
 const currentKnowledgeBase = ref<any>(null)
 const rules: FormRules = {
 	knowledge_base_name: [{required: true, message: '请选择知识库名称'}],
-	type: [{required: true, message: '请选择向量库类型'}],
+	vector_store_type: [{required: true, message: '请选择向量库类型'}],
 	embedding_model: [{required: true, message: '请选择Embeddings模型'}]
 }
 const formRef = ref<FormInst | null>(null)
 const modelRef = ref<ModelType>({
-	knowledge_base_name: null,
-	description: null,
-	type: null,
-	embedding_model: null
+	knowledge_base_name: '',
+	kb_info: '',
+	vector_store_type: '',
+	embedding_model: ''
 })
 const baseOptions = ref([])
 const fileList = ref<UploadFileInfo[]>([])
@@ -98,11 +98,12 @@ const columns = [
 		title: "操作",
 		key: "action",
 		align: "center",
+		width: 150,
 		render: (record: any) => {
 			return h(
 				"div",
 				{
-					class: "flex, justify-between"
+					class: "flex justify-center space-x-2"
 				},
 				[
 					h(
@@ -116,6 +117,19 @@ const columns = [
 						},
 						{
 							default: () => "下载"
+						}
+					),
+					h(
+						NButton,
+						{
+							type: "error",
+							size: "small",
+							onClick: () => {
+								console.log("删除")
+							}
+						},
+						{
+							default: () => "删除"
 						}
 					)
 				]
@@ -179,17 +193,38 @@ const beforeUpload = (data: { file: UploadFileInfo; fileList: UploadFileInfo[] }
 	return true
 }
 
-function createSubmit() {
-	// e.preventDefault()
+function createSubmit(e: MouseEvent) {
+	e.preventDefault()
 	formRef.value?.validate((errors) => {
 		if (!errors) {
-			console.log("提交成功")
-			message.success('提交成功')
+			createKnowledgeBase({
+				knowledge_base_name: modelRef.value.knowledge_base_name,
+				kb_info: modelRef.value.kb_info,
+				vector_store_type: modelRef.value.vector_store_type,
+				embed_model: modelRef.value.embedding_model
+			}).then(res => {
+				currentKnowledgeBase.value = modelRef.value.knowledge_base_name
+				message.success(res.msg)
+				fetchKnowledgeBase()
+				baseListFiles()
+				closeCreateForm()
+			})
 		} else {
-			console.log("提交失败")
 			message.error('验证失败')
 		}
 	})
+}
+
+function closeCreateForm() {
+	showCreate.value = false
+	// 重置表单内容
+	modelRef.value = {
+		knowledge_base_name: '',
+		kb_info: '',
+		vector_store_type: '',
+		embedding_model: ''
+	}
+	formRef.value?.restoreValidation()
 }
 
 // 创建一个计算属性来转换 baseOptions 的格式
@@ -205,22 +240,22 @@ const formattedBaseOptions = computed(() => {
 	return options
 })
 
-
+//获取知识库
 function fetchKnowledgeBase() {
 	fetchListKnowledgeBases().then(res => {
 		baseOptions.value = res.data
 	})
 }
 
+//获取知识库内文件
 function baseListFiles() {
-	fetchListFiles({knowledge_base_name: "samples"}).then(res => {
-		console.log(res.data)
+	console.log("这是当前知识库:", currentKnowledgeBase.value)
+	fetchListFiles({knowledge_base_name: currentKnowledgeBase.value}).then(res => {
 		tableData.value = res.data
 	}).catch(err => {
 		console.log(err)
 	})
 }
-
 </script>
 
 <template>
@@ -261,7 +296,7 @@ function baseListFiles() {
 
 					<div class="overflow-y-auto" v-if="false">
 						<div class="text-lg font-bold mb-4">请输入知识库介绍</div>
-						<NInput v-model:value="modelRef.description" type="textarea" @keydown.enter.prevent/>
+						<NInput v-model:value="modelRef.kb_info" type="textarea" @keydown.enter.prevent/>
 					</div>
 
 					<div class="overflow-y-auto pt-4">
@@ -290,22 +325,29 @@ function baseListFiles() {
 						<NDataTable :columns="columns" :data="tableData" :bordered="true" :pagination="pagination" striped></NDataTable>
 					</div>
 				</div>
-				<NModal v-model:show="showCreate" preset="dialog" positive-text="确定" negative-text="取消"
-								@positive-click="createSubmit" :show-icon="false">
-					<NForm ref="formRef" :model="modelRef" :rules="rules">
-						<NFormItem path="knowledge_base_name" label="新建知识库名称">
-							<NInput v-model:value="modelRef.knowledge_base_name" @keydown.enter.prevent/>
-						</NFormItem>
-						<NFormItem path="description" label="知识库简介">
-							<NInput v-model:value="modelRef.description" @keydown.enter.prevent/>
-						</NFormItem>
-						<NFormItem path="type" label="向量库类型">
-							<NSelect v-model:value="modelRef.type" :options="faissOptions"/>
-						</NFormItem>
-						<NFormItem path="embedding_model" label="Embeddings模型">
-							<NSelect v-model:value="modelRef.embedding_model" :options="embeddingOptions"/>
-						</NFormItem>
-					</NForm>
+				<NModal v-model:show="showCreate">
+					<NCard title="新建知识库" style="width: 600px" :bordered="true" >
+						<NForm ref="formRef" :model="modelRef" :rules="rules">
+							<NFormItem path="knowledge_base_name" label="新建知识库名称">
+								<NInput v-model:value="modelRef.knowledge_base_name" placeholder="暂不支持中文" @keydown.enter.prevent/>
+							</NFormItem>
+							<NFormItem path="kb_info" label="知识库简介">
+								<NInput v-model:value="modelRef.kb_info" @keydown.enter.prevent/>
+							</NFormItem>
+							<NFormItem path="type" label="向量库类型">
+								<NSelect v-model:value="modelRef.vector_store_type" :options="faissOptions"/>
+							</NFormItem>
+							<NFormItem path="embedding_model" label="Embeddings模型">
+								<NSelect v-model:value="modelRef.embedding_model" :options="embeddingOptions"/>
+							</NFormItem>
+							<NFormItem>
+								<div class="flex space-x-2 justify-end w-full">
+									<NButton attr-type="button" @click="closeCreateForm">取消</NButton>
+									<NButton attr-type="button" type="primary" @click="createSubmit">创建</NButton>
+								</div>
+							</NFormItem>
+						</NForm>
+					</NCard>
 				</NModal>
 			</NCard>
 		</div>
