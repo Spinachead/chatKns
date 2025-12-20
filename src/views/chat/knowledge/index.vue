@@ -48,7 +48,7 @@ const zh_title_enhance = ref(false)
 const pagination = {pageSize: 10}
 const message = useMessage()
 const showCreate = ref(false)
-const currentKnowledgeBase = ref<any>(null)
+const currentKnowledgeBase = ref<any>('samples')
 const rules: FormRules = {
 	knowledge_base_name: [{required: true, message: '请选择知识库名称'}],
 	vector_store_type: [{required: true, message: '请选择向量库类型'}],
@@ -212,7 +212,7 @@ function createSubmit(e: MouseEvent) {
 			}).then(res => {
 				currentKnowledgeBase.value = modelRef.value.knowledge_base_name
 				message.success(res.msg)
-				baseListFiles()
+				getFileListByBase(currentKnowledgeBase.value)
 				fetchKnowledgeBase()
 				closeCreateForm()
 			})
@@ -251,14 +251,15 @@ const formattedBaseOptions = computed(() => {
 function fetchKnowledgeBase() {
 	fetchListKnowledgeBases().then(res => {
 		baseOptions.value = res.data
-		baseListFiles()
+		getFileListByBase(currentKnowledgeBase.value)
 	})
 }
 
+
 //获取知识库内文件
-function baseListFiles() {
-	const base_name = currentKnowledgeBase.value === null ? 'samples' : currentKnowledgeBase.value
-	fetchListFiles({knowledge_base_name: base_name}).then(res => {
+function getFileListByBase(base: string) {
+	console.log("这是选择的知识库", base)
+	fetchListFiles({knowledge_base_name: base}).then(res => {
 		tableData.value = res.data
 	}).catch(err => {
 		console.log(err)
@@ -280,7 +281,7 @@ function uploadFiles() {
 		zh_title_enhance: zh_title_enhance.value
 	}).then(res => {
 		message.success(res.msg)
-		baseListFiles()
+		getFileListByBase(currentKnowledgeBase.value)
 	}).catch(err => {
 		console.log(err)
 	})
@@ -296,7 +297,7 @@ function deleteDocs(item: any) {
 		not_refresh_vs_cache: true
 	}).then(res => {
 		message.success(res.msg)
-		baseListFiles()
+		getFileListByBase(currentKnowledgeBase.value)
 	})
 }
 
@@ -324,7 +325,7 @@ function deleteKnBase() {
 					<div class="flex items-center">
 						<div>当前知识库：</div>
 						<NSelect v-model:value="currentKnowledgeBase" :options="formattedBaseOptions"
-										 :on-update-value="baseListFiles" style="width: 200px"></NSelect>
+										 :on-update-value="(value) => getFileListByBase(value)" style="width: 200px"></NSelect>
 					</div>
 					<NPopconfirm @positive-click="deleteKnBase">
 						<template #trigger>
