@@ -4,6 +4,7 @@ import { NModal, NTabPane, NTabs } from 'naive-ui'
 import General from './General.vue'
 import Advanced from './Advanced.vue'
 import About from './About.vue'
+import Rag from './Rag.vue'
 import { useAuthStore } from '@/store'
 import { SvgIcon } from '@/components/common'
 
@@ -64,6 +65,13 @@ const show = computed({
           </template>
           <About />
         </NTabPane>
+				<NTabPane name="Rag" tab="Rag">
+					<template #tab>
+						<SvgIcon class="text-lg" icon="ri:list-settings-line" />
+						<span class="ml-2">{{ $t('setting.rag') }}</span>
+					</template>
+					<Rag/>
+				</NTabPane>
       </NTabs>
     </div>
   </NModal>

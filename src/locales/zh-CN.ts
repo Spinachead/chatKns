@@ -79,6 +79,13 @@ export default {
     openSource: '此项目开源于',
     freeMIT: '免费且基于 MIT 协议，没有任何形式的付费行为',
     stars: '如果你觉得此项目对你有帮助，请在 GitHub 上给我一个星星或者给予一点赞助，谢谢！',
+		rag: 'RAG配置',
+		knowledgeBaseName: '知识库',
+		historyChatTimes: '历史对话轮数',
+		topK: '匹配知识条数',
+		scoreThreshold: '知识匹配分数阈值',
+		returnDirect: '仅返回检索结果'
+
   },
   store: {
     siderButton: '提示词商店',
