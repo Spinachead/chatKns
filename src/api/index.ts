@@ -34,8 +34,9 @@ export function fetchChatAPIProcess<T = any>(
     prompt: params.prompt,
     options: params.options,
     query: params.prompt,
-    kb_name: 'samples',
+    kb_name: settingStore.kb_name
   }
+	console.log("这是请求data", data)
 
   if (authStore.isChatGPTAPI) {
     data = {

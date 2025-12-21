@@ -1,129 +1,34 @@
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
-import { NButton, NInput, NPopconfirm, NSelect, useMessage, NSlider, NInputNumber, NSwitch} from 'naive-ui'
-import type { Language, Theme } from '@/store/modules/app/helper'
-import { SvgIcon } from '@/components/common'
-import { useAppStore, useUserStore } from '@/store'
-import type { UserInfo } from '@/store/modules/user/helper'
-import { getCurrentDate } from '@/utils/functions'
-import { useBasicLayout } from '@/hooks/useBasicLayout'
-import { t } from '@/locales'
+import {onMounted, ref, computed} from 'vue'
+import {NSelect, NSlider, NInputNumber, NSwitch} from 'naive-ui'
+import {useSettingStore} from '@/store'
+import {fetchListKnowledgeBases} from "@/api";
 
-const appStore = useAppStore()
-const userStore = useUserStore()
-
-const { isMobile } = useBasicLayout()
-
-const ms = useMessage()
-
-const theme = computed(() => appStore.theme)
-
-const userInfo = computed(() => userStore.userInfo)
-
-const avatar = ref(userInfo.value.avatar ?? '')
-
-const name = ref(userInfo.value.name ?? '')
-
-const description = ref(userInfo.value.description ?? '')
-const numberTimes = ref(3)
-const scoreThreshold = ref(2.0)
-const returnDirect = ref(false)
-
-const language = computed({
-	get() {
-		return appStore.language
-	},
-	set(value: Language) {
-		appStore.setLanguage(value)
-	},
+onMounted(() => {
+	fetchKnowledgeBase()
 })
 
-const themeOptions: { label: string; key: Theme; icon: string }[] = [
-	{
-		label: 'Auto',
-		key: 'auto',
-		icon: 'ri:contrast-line',
-	},
-	{
-		label: 'Light',
-		key: 'light',
-		icon: 'ri:sun-foggy-line',
-	},
-	{
-		label: 'Dark',
-		key: 'dark',
-		icon: 'ri:moon-foggy-line',
-	},
-]
+const settingStore = useSettingStore()
+const kb_name = ref(settingStore.kb_name ?? '')
+const top_k = ref(settingStore.top_k ?? 3)
+const scoreThreshold = ref(settingStore.score_threshold ?? 2.0)
+const returnDirect = ref(settingStore.return_direct ?? false)
+const baseOptions = ref([])
 
-const languageOptions: { label: string; key: Language; value: Language }[] = [
-	{ label: 'English', key: 'en-US', value: 'en-US' },
-	{ label: 'Español', key: 'es-ES', value: 'es-ES' },
-	{ label: '한국어', key: 'ko-KR', value: 'ko-KR' },
-	{ label: 'Русский язык', key: 'ru-RU', value: 'ru-RU' },
-	{ label: 'Tiếng Việt', key: 'vi-VN', value: 'vi-VN' },
-	{ label: '简体中文', key: 'zh-CN', value: 'zh-CN' },
-	{ label: '繁體中文', key: 'zh-TW', value: 'zh-TW' },
-]
+// 创建一个计算属性来转换 baseOptions 的格式
+const formattedBaseOptions = computed(() => {
+	const options = baseOptions.value.map((item: any) => ({
+		label: item.kb_name,
+		value: item.kb_name
+	}))
+	return options
+})
 
-function updateUserInfo(options: Partial<UserInfo>) {
-	userStore.updateUserInfo(options)
-	ms.success(t('common.success'))
-}
-
-function handleReset() {
-	userStore.resetUserInfo()
-	ms.success(t('common.success'))
-	window.location.reload()
-}
-
-function exportData(): void {
-	const date = getCurrentDate()
-	const data: string = localStorage.getItem('chatStorage') || '{}'
-	const jsonString: string = JSON.stringify(JSON.parse(data), null, 2)
-	const blob: Blob = new Blob([jsonString], { type: 'application/json' })
-	const url: string = URL.createObjectURL(blob)
-	const link: HTMLAnchorElement = document.createElement('a')
-	link.href = url
-	link.download = `chat-store_${date}.json`
-	document.body.appendChild(link)
-	link.click()
-	document.body.removeChild(link)
-}
-
-function importData(event: Event): void {
-	const target = event.target as HTMLInputElement
-	if (!target || !target.files)
-		return
-
-	const file: File = target.files[0]
-	if (!file)
-		return
-
-	const reader: FileReader = new FileReader()
-	reader.onload = () => {
-		try {
-			const data = JSON.parse(reader.result as string)
-			localStorage.setItem('chatStorage', JSON.stringify(data))
-			ms.success(t('common.success'))
-			location.reload()
-		}
-		catch (error) {
-			ms.error(t('common.invalidFileFormat'))
-		}
-	}
-	reader.readAsText(file)
-}
-
-function clearData(): void {
-	localStorage.removeItem('chatStorage')
-	location.reload()
-}
-
-function handleImportButtonClick(): void {
-	const fileInput = document.getElementById('fileInput') as HTMLElement
-	if (fileInput)
-		fileInput.click()
+//获取知识库
+function fetchKnowledgeBase() {
+	fetchListKnowledgeBases().then(res => {
+		baseOptions.value = res.data
+	})
 }
 </script>
 
@@ -135,47 +40,30 @@ function handleImportButtonClick(): void {
 				<div class="flex flex-wrap items-center gap-4">
 					<NSelect
 						style="width: 140px"
-						:value="language"
-						:options="languageOptions"
-						@update-value="value => appStore.setLanguage(value)"
+						v-model:value="kb_name"
+						:options="formattedBaseOptions"
+						@update-value="value => settingStore.setKbName(value)"
 					/>
 				</div>
 			</div>
-			<div class="flex items-center space-x-4">
-				<span class="flex-shrink-0 w-[120px]">{{ $t('setting.historyChatTimes') }}</span>
-				<div class="flex-1">
-					<NInputNumber v-model:value="numberTimes"></NInputNumber>
-				</div>
-				<NButton size="tiny" text type="primary" @click="updateUserInfo({ avatar })">
-					{{ $t('common.save') }}
-				</NButton>
-			</div>
+
 			<div class="flex items-center space-x-4">
 				<span class="flex-shrink-0 w-[120px]">{{ $t('setting.topK') }}</span>
 				<div class="flex-1">
-					<NInputNumber v-model:value="numberTimes"></NInputNumber>
+					<NInputNumber v-model:value="top_k" :min="0" :max="10" @update-value="value => settingStore.setTopk(value)"></NInputNumber>
 				</div>
-				<NButton size="tiny" text type="primary" @click="updateUserInfo({ avatar })">
-					{{ $t('common.save') }}
-				</NButton>
 			</div>
 			<div class="flex items-center space-x-4">
 				<span class="flex-shrink-0 w-[120px]">{{ $t('setting.scoreThreshold') }}</span>
 				<div class="flex-1">
-					<NSlider v-model:value="scoreThreshold" :max="2.0" :min="0.0" :step="0.1"></NSlider>
+					<NSlider v-model:value="scoreThreshold" :max="2.0" :min="0.0" :step="0.1" @update-value="value => settingStore.setScoreThreshold(value)"></NSlider>
 				</div>
-				<NButton size="tiny" text type="primary" @click="updateUserInfo({ avatar })">
-					{{ $t('common.save') }}
-				</NButton>
 			</div>
 			<div class="flex items-center space-x-4">
 				<span class="flex-shrink-0 w-[120px]">{{ $t('setting.scoreThreshold') }}</span>
 				<div class="flex-1">
-					<NSwitch v-model:value="returnDirect"></NSwitch>
+					<NSwitch v-model:value="returnDirect" @update-value="value => settingStore.setReturnDirect(value)"></NSwitch>
 				</div>
-				<NButton size="tiny" text type="primary" @click="updateUserInfo({ avatar })">
-					{{ $t('common.save') }}
-				</NButton>
 			</div>
 		</div>
 	</div>

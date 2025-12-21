@@ -14,6 +14,24 @@ export const useSettingStore = defineStore('setting-store', {
       this.$state = defaultSetting()
       removeLocalState()
     },
+		setKbName(kbName: string) {
+			if (this.kb_name !== kbName) {
+				this.kb_name = kbName
+				this.recordState()
+			}
+		},
+		setTopk(top_k: number) {
+			this.top_k = top_k
+			this.recordState()
+		},
+		setScoreThreshold(score_threshold: number) {
+			this.score_threshold = score_threshold
+			this.recordState()
+		},
+		setReturnDirect(return_direct: boolean) {
+			this.return_direct = return_direct
+			this.recordState()
+		},
 
     recordState() {
       setLocalState(this.$state)
