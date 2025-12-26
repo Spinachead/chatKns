@@ -48,7 +48,7 @@ export function fetchChatAPIProcess<T = any>(
   }
 
   return post<T>({
-    url: '/kb_chat2',
+    url: '/kb_chat',
     data,
     signal: params.signal,
     onDownloadProgress: params.onDownloadProgress,
@@ -114,7 +114,7 @@ export function fetchUploadFile<T = any>(
 
 
 export function fetchListKnowledgeBases<T = any>() {
-	return post<T>({
+	return get<T>({
 		url: 'list_knowledge_bases',
 	})
 }
