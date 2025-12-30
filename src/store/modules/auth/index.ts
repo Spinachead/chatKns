@@ -1,83 +1,79 @@
 import {defineStore} from 'pinia'
-import {getRefreshToken, getToken, removeRefreshToken, removeToken, setRefreshToken, setToken} from './helper'
+import {
+	getAccessToken,
+	getRefreshToken, removeAccessToken,
+	removeRefreshToken,
+	setAccessToken,
+	setRefreshToken,
+} from './helper'
 import {store} from '@/store/helper'
-import {fetchSession} from '@/api'
-
-interface SessionResponse {
-	auth: boolean
-	model: 'ChatGPTAPI' | 'ChatGPTUnofficialProxyAPI'
-}
+import {fetchUserInfo} from "@/api";
+// import {fetchSession} from '@/api'
+//
+// interface SessionResponse {
+// 	auth: boolean
+// 	model: 'ChatGPTAPI' | 'ChatGPTUnofficialProxyAPI'
+// }
 
 export interface AuthState {
-	token: string | undefined
-	session: SessionResponse | null
 	isAuth: boolean
 }
 
 export const useAuthStore = defineStore('auth-store', {
 	state: (): AuthState => ({
-		token: getToken(),
-		session: null,
 		isAuth: false,
 	}),
 
 	getters: {
-		isChatGPTAPI(state): boolean {
-			return state.session?.model === 'ChatGPTAPI'
-		},
 		accessToken() {
-			return getToken()
+			return getAccessToken()
 		},
 		refreshToken() {
 			return getRefreshToken()
 		},
-		hasTokens() {
-			return !!(this.refreshToken() && this.accessToken())
-		}
 
 	},
 
 	actions: {
-		async getSession() {
-			try {
-				const {data} = await fetchSession<SessionResponse>()
-				this.session = {...data}
-				return Promise.resolve(data)
-			} catch (error) {
-				return Promise.reject(error)
-			}
+		// async getSession() {
+		// 	try {
+		// 		const {data} = await fetchSession<SessionResponse>()
+		// 		this.session = {...data}
+		// 		return Promise.resolve(data)
+		// 	} catch (error) {
+		// 		return Promise.reject(error)
+		// 	}
+		// },
+
+		setAccessToken(accessToken: string) {
+			setAccessToken(accessToken)
 		},
 
-		setToken(accessToken: string, refreshToken: string) {
-			this.token = accessToken
-			setToken(accessToken)
+		removeAccessToken() {
+			removeAccessToken()
+		},
+		setRefreshToken( refreshToken: string) {
 			setRefreshToken(refreshToken)
 		},
-
-		removeToken() {
-			this.token = undefined
-			removeToken()
-			removeRefreshToken()
+		removeRefreshToken() {
+			 removeRefreshToken()
 		},
 
 		async initializeAuth() {
-			if (this.hasTokens) {
+			if (this.accessToken) {
 				try {
 					// 验证令牌有效性
-					const response = await fetch('/api/user_info', {
-						headers: {
-							'Authorization': `Bearer ${this.accessToken}`
-						}
-					})
-
-					if (response.ok) {
+					const response = await fetchUserInfo()
+					if (response.code === 200) {
 						this.isAuth = true
 					} else {
 						// 令牌无效，清除它们
-						this.removeToken()
+						this.removeAccessToken()
+						this.removeRefreshToken()
 					}
 				} catch (error) {
-					this.removeToken()
+					this.removeAccessToken()
+					this.removeRefreshToken()
 				}
 
 			}

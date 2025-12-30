@@ -1,6 +1,6 @@
 import type { AxiosProgressEvent, GenericAbortSignal } from 'axios'
 import {get, post} from '@/utils/request'
-import { useAuthStore, useSettingStore } from '@/store'
+import {useSettingStore } from '@/store'
 
 export function fetchChatAPI<T = any>(
   prompt: string,
@@ -28,7 +28,6 @@ export function fetchChatAPIProcess<T = any>(
     onDownloadProgress?: (progressEvent: AxiosProgressEvent) => void },
 ) {
   const settingStore = useSettingStore()
-  const authStore = useAuthStore()
 
   let data: Record<string, any> = {
     prompt: params.prompt,
@@ -38,14 +37,6 @@ export function fetchChatAPIProcess<T = any>(
   }
 	console.log("这是请求data", data)
 
-  if (authStore.isChatGPTAPI) {
-    data = {
-      ...data,
-      systemMessage: settingStore.systemMessage,
-      temperature: settingStore.temperature,
-      top_p: settingStore.top_p,
-    }
-  }
 
   return post<T>({
     url: '/kb_chat',
@@ -262,4 +253,23 @@ export function login<T = any>(
 	})
 }
 
+export function fetchUserInfo<T = any>() {
+	return get<T>({
+		url: 'user_info',
+	})
+}
+
+export function fetchRefreshToken<T = any>(
+	params: {
+		refresh_token: string
+	}
+) {
+	let data: Record<string, any> = {
+		refresh_token: params.refresh_token,
+	}
+	return post<T>({
+		url: 'refresh_token',
+		data: data
+	})
+}
 

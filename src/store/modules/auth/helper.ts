@@ -3,15 +3,15 @@ import { ss } from '@/utils/storage'
 const ACCESS_TOKEN = 'access_token'
 const REFRESH_TOKEN = "refresh_token"
 
-export function getToken() {
+export function getAccessToken() {
   return ss.get(ACCESS_TOKEN)
 }
 
-export function setToken(token: string) {
+export function setAccessToken(token: string) {
   return ss.set(ACCESS_TOKEN, token)
 }
 
-export function removeToken() {
+export function removeAccessToken() {
   return ss.remove(ACCESS_TOKEN)
 }
 

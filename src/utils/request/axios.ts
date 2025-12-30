@@ -1,5 +1,6 @@
 import axios, { type AxiosResponse } from 'axios'
 import { useAuthStore } from '@/store'
+import {fetchRefreshToken} from "@/api";
 
 const service = axios.create({
   baseURL: import.meta.env.VITE_GLOB_API_URL,
@@ -7,7 +8,7 @@ const service = axios.create({
 
 service.interceptors.request.use(
   (config) => {
-    const token = useAuthStore().token
+    const token = useAuthStore().accessToken
     if (token)
       config.headers.Authorization = `Bearer ${token}`
     return config
@@ -29,19 +30,14 @@ service.interceptors.response.use(
     if (error.response?.status === 401) {
       try {
         // 尝试使用刷新令牌获取新访问令牌
-        const refreshResponse = await fetch('/refresh', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refresh_token: localStorage.getItem('refreshToken') })
-        });
 
-        if (refreshResponse.ok) {
-          const { access_token } = await refreshResponse.json();
-          localStorage.setItem('access_token', access_token);
+				const refreshResponse = await fetchRefreshToken({refresh_token: useAuthStore().accessToken})
 
+        if (refreshResponse.code === 200) {
+					const {access_token} = refreshResponse.data;
+					useAuthStore().setAccessToken(access_token);
           // 更新 axios 默认头部
           service.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-
           // 重新发送原始请求
           const originalRequest = error.config;
           originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
@@ -50,7 +46,7 @@ service.interceptors.response.use(
       } catch (refreshError) {
         console.error('Token refresh failed:', refreshError);
         // 刷新失败，跳转到登录页
-        useAuthStore().removeToken();
+				useAuthStore().removeAccessToken()
         window.location.href = '/login';
       }
     }

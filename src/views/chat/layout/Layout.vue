@@ -46,6 +46,6 @@ const getContainerClass = computed(() => {
         </NLayoutContent>
       </NLayout>
     </div>
-    <Permission :visible="needPermission" />
+<!--    <Permission :visible="needPermission" />-->
   </div>
 </template>

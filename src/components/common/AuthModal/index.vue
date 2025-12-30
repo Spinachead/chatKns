@@ -296,7 +296,8 @@ const handleLogin = async () => {
     })
 
     // 保存token
-    authStore.setToken(data.token)
+    authStore.setAccessToken(data.access_token)
+		authStore.setRefreshToken(data.access_token)
     ms.success('登录成功')
 
     // 关闭弹窗

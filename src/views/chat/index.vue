@@ -50,8 +50,7 @@ const {promptList: promptTemplate} = storeToRefs<any>(promptStore)
 
 // 检查用户是否已登录
 const isLoggedIn = computed(() => {
-  // return !!authStore.token
-	return false
+  return authStore.isAuth
 })
 
 // 未知原因刷新页面，loading 状态不会重置，手动重置
