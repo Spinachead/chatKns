@@ -189,3 +189,77 @@ export function fetchDeleteDocs<T = any>(
 		data: data
 	})
 }
+
+export function getCaptcha<T = any>() {
+	return get<T>({
+		url: 'get_captcha',
+	})
+}
+
+export function verifyCaptcha<T =any>(
+	params: {
+		captcha_key: String,
+		captcha_answer: string
+	}
+) {
+	let data: Record<string, any> = {
+		captcha_key: params.captcha_key,
+		captcha_answer: params.captcha_answer
+	}
+	return post<T>({
+		url: 'verify_captcha',
+		data: data
+	})
+}
+
+export function sendEmailVerification<T = any>(
+	params: {
+		email: string
+	}
+) {
+	let data: Record<string, any> = {
+		email: params.email
+	}
+	return post<T>({
+		url: 'send_email_verification',
+		data: data
+	})
+}
+
+export function register<T = any>(
+	params: {
+		email: string,
+		password: string,
+		confirm_password: string,
+		email_verification_code: string
+	}
+) {
+	let data: Record<string, any> = {
+		email: params.email,
+		password: params.password,
+		confirm_password: params.confirm_password,
+		email_verification_code: params.email_verification_code
+	}
+	return post<T>({
+		url: 'register',
+		data: data
+	})
+}
+
+export function login<T = any>(
+	params: {
+		email: string,
+		password: string
+	}
+) {
+	let data: Record<string, any> = {
+		email: params.email,
+		password: params.password
+	}
+	return post<T>({
+		url: 'login',
+		data: data
+	})
+}
+	
+
