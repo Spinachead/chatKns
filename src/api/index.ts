@@ -199,12 +199,12 @@ export function getCaptcha<T = any>() {
 export function verifyCaptcha<T =any>(
 	params: {
 		captcha_key: String,
-		captcha_answer: string
+		captcha_code: string
 	}
 ) {
 	let data: Record<string, any> = {
 		captcha_key: params.captcha_key,
-		captcha_answer: params.captcha_answer
+		captcha_code: params.captcha_code
 	}
 	return post<T>({
 		url: 'verify_captcha',
@@ -261,5 +261,5 @@ export function login<T = any>(
 		data: data
 	})
 }
-	
+
 

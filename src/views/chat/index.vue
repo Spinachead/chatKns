@@ -10,9 +10,9 @@ import {useScroll} from './hooks/useScroll'
 import {useChat} from './hooks/useChat'
 import {useUsingContext} from './hooks/useUsingContext'
 import HeaderComponent from './components/Header/index.vue'
-import {HoverButton, SvgIcon} from '@/components/common'
+import {HoverButton, SvgIcon, AuthModal} from '@/components/common'
 import {useBasicLayout} from '@/hooks/useBasicLayout'
-import {useChatStore, usePromptStore} from '@/store'
+import {useAuthStore, useChatStore, usePromptStore} from '@/store'
 import {fetchChatAPIProcess, fetchUploadFile} from '@/api'
 import {t} from '@/locales'
 
@@ -24,6 +24,7 @@ const route = useRoute()
 const dialog = useDialog()
 const ms = useMessage()
 
+const authStore = useAuthStore()
 const chatStore = useChatStore()
 
 const {isMobile} = useBasicLayout()
@@ -39,12 +40,19 @@ const conversationList = computed(() => dataSources.value.filter(item => (!item.
 const prompt = ref<string>('')
 const loading = ref<boolean>(false)
 const inputRef = ref<Ref | null>(null)
+const showAuthModal = ref(false)
 
 // 添加PromptStore
 const promptStore = usePromptStore()
 
 // 使用storeToRefs，保证store修改后，联想部分能够重新渲染
 const {promptList: promptTemplate} = storeToRefs<any>(promptStore)
+
+// 检查用户是否已登录
+const isLoggedIn = computed(() => {
+  // return !!authStore.token
+	return false
+})
 
 // 未知原因刷新页面，loading 状态不会重置，手动重置
 dataSources.value.forEach((item, index) => {
@@ -54,6 +62,11 @@ dataSources.value.forEach((item, index) => {
 
 function handleSubmit() {
 	onConversation()
+}
+
+function handleAuthClose() {
+  // 可以在这里添加登录成功后的处理逻辑
+  // 例如刷新页面或更新UI
 }
 
 async function onConversation() {
@@ -477,7 +490,13 @@ onUnmounted(() => {
 						<template v-if="!dataSources.length">
 							<div class="flex items-center justify-center mt-4 text-center text-neutral-300">
 								<SvgIcon icon="ri:bubble-chart-fill" class="mr-2 text-3xl"/>
-								<span>{{ t('chat.newChatTitle') }}</span>
+								<span v-if="isLoggedIn">{{ t('chat.newChatTitle') }}</span>
+								<div v-else class="flex flex-col items-center">
+									<span>{{ t('chat.newChatTitle') }}</span>
+									<NButton text type="primary" @click="showAuthModal = true" class="mt-2">
+										{{ $t('auth.clickToLogin') }}
+									</NButton>
+								</div>
 							</div>
 						</template>
 						<template v-else>
@@ -550,5 +569,6 @@ onUnmounted(() => {
 				</div>
 			</div>
 		</footer>
+		<AuthModal v-model:visible="showAuthModal" @close="handleAuthClose" />
 	</div>
 </template>

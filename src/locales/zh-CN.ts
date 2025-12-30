@@ -87,6 +87,25 @@ export default {
 		returnDirect: '仅返回检索结果'
 
   },
+  auth: {
+    login: '登录',
+    register: '注册',
+    email: '邮箱',
+    password: '密码',
+    confirmPassword: '确认密码',
+    captcha: '图形验证码',
+    emailVerificationCode: '邮箱验证码',
+    emailPlaceholder: '请输入邮箱',
+    passwordPlaceholder: '请输入密码',
+    confirmPasswordPlaceholder: '请再次输入密码',
+    captchaPlaceholder: '请输入图形验证码',
+    emailVerificationCodePlaceholder: '请输入邮箱验证码',
+    refreshCaptcha: '刷新验证码',
+    sendEmailCode: '发送验证码',
+    noAccount: '还没有账号？点击注册',
+    hasAccount: '已有账号？点击登录',
+    clickToLogin: '点击登录',
+  },
   store: {
     siderButton: '提示词商店',
     local: '本地',
