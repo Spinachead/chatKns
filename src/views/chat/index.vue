@@ -511,6 +511,12 @@ onUnmounted(() => {
 									@regenerate="onRegenerate(index)"
 									@delete="handleDelete(index)"
 								/>
+								<!-- 未登录状态下始终显示登录按钮 -->
+								<div v-if="!isLoggedIn" class="flex justify-center mt-4">
+									<NButton text type="primary" @click="showAuthModal = true">
+										{{ $t('auth.clickToLogin') }}
+									</NButton>
+								</div>
 								<div class="sticky bottom-0 left-0 flex justify-center">
 									<NButton v-if="loading" type="warning" @click="handleStop">
 										<template #icon>

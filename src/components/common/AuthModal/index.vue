@@ -6,9 +6,6 @@
           <NTab name="login">{{ $t('auth.login') }}</NTab>
           <NTab name="register">{{ $t('auth.register') }}</NTab>
         </NTabs>
-        <NButton text @click="onClose">
-          <SvgIcon icon="ic:round-close" class="text-xl" />
-        </NButton>
       </div>
 
       <!-- 登录表单 -->
