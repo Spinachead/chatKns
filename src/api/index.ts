@@ -261,7 +261,7 @@ export function fetchUserInfo<T = any>() {
 
 export function fetchRefreshToken<T = any>(
 	params: {
-		refresh_token: string
+		refresh_token: string | null
 	}
 ) {
 	let data: Record<string, any> = {

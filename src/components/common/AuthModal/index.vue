@@ -292,10 +292,9 @@ const handleLogin = async () => {
       password: loginForm.password
     })
 
-    // 保存token
     authStore.setAccessToken(data.access_token)
-		authStore.setRefreshToken(data.access_token)
-		await authStore.initializeAuth()
+    authStore.setRefreshToken(data.refresh_token)
+    authStore.isAuth = true
     ms.success('登录成功')
 
     // 关闭弹窗

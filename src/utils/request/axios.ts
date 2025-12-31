@@ -31,7 +31,7 @@ service.interceptors.response.use(
       try {
         // 尝试使用刷新令牌获取新访问令牌
 
-				const refreshResponse = await fetchRefreshToken({refresh_token: useAuthStore().accessToken})
+				const refreshResponse = await fetchRefreshToken({refresh_token: useAuthStore().refreshToken})
 
         if (refreshResponse.code === 200) {
 					const {access_token} = refreshResponse.data;

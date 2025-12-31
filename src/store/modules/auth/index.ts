@@ -1,7 +1,6 @@
 import {defineStore} from 'pinia'
 import {
-	getAccessToken,
-	getRefreshToken, removeAccessToken,
+ 	removeAccessToken,
 	removeRefreshToken,
 	setAccessToken,
 	setRefreshToken,
@@ -17,20 +16,19 @@ import {fetchUserInfo} from "@/api";
 
 export interface AuthState {
 	isAuth: boolean
+	accessToken: string | null
+	refreshToken: string | null
+
 }
 
 export const useAuthStore = defineStore('auth-store', {
 	state: (): AuthState => ({
 		isAuth: false,
+		accessToken: '',
+		refreshToken: '',
 	}),
 
 	getters: {
-		accessToken() {
-			return getAccessToken()
-		},
-		refreshToken() {
-			return getRefreshToken()
-		},
 
 	},
 
@@ -46,16 +44,20 @@ export const useAuthStore = defineStore('auth-store', {
 		// },
 
 		setAccessToken(accessToken: string) {
+			this.accessToken = accessToken
 			setAccessToken(accessToken)
 		},
 
 		removeAccessToken() {
+			this.accessToken = ''
 			removeAccessToken()
 		},
 		setRefreshToken( refreshToken: string) {
+			this.refreshToken = refreshToken
 			setRefreshToken(refreshToken)
 		},
 		removeRefreshToken() {
+			this.refreshToken = ''
 			 removeRefreshToken()
 		},
 
