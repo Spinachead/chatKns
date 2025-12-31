@@ -27,7 +27,7 @@ service.interceptors.response.use(
     throw new Error(response.status.toString())
   },
   async (error) => {
-    if (error.response?.status === 401 || error.response?.status === 403) {
+    if (error.response?.status === 401) {
       try {
         // 尝试使用刷新令牌获取新访问令牌
 

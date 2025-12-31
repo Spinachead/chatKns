@@ -60,6 +60,10 @@ dataSources.value.forEach((item, index) => {
 })
 
 function handleSubmit() {
+	if (!isLoggedIn.value) {
+		showAuthModal.value = true
+		return
+	}
 	onConversation()
 }
 

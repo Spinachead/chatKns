@@ -1,5 +1,5 @@
 <template>
-  <NModal :show="visible" :on-after-leave="onClose" preset="card" style="width: 90%; max-width: 500px;">
+  <NModal :show="visible" :on-after-leave="onClose" preset="card" style="width: 90%; max-width: 500px;" :closable="true" @close="onClose">
     <div class="p-6">
       <div class="flex justify-between items-center mb-6">
         <NTabs v-model:value="authType" type="segment" animated>
