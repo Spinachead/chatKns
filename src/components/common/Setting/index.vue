@@ -65,13 +65,13 @@ const show = computed({
           </template>
           <About />
         </NTabPane>
-				<NTabPane name="Rag" tab="Rag">
+				<!-- <NTabPane name="Rag" tab="Rag">
 					<template #tab>
 						<SvgIcon class="text-lg" icon="ri:list-settings-line" />
 						<span class="ml-2">{{ $t('setting.rag') }}</span>
 					</template>
 					<Rag/>
-				</NTabPane>
+				</NTabPane> -->
       </NTabs>
     </div>
   </NModal>
