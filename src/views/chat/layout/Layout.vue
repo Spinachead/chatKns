@@ -19,6 +19,7 @@ const { isMobile } = useBasicLayout()
 
 const collapsed = computed(() => appStore.siderCollapsed)
 
+const needPermission = computed(() => !!authStore.session?.auth && !authStore.token)
 
 const getMobileClass = computed(() => {
   if (isMobile.value)
@@ -29,8 +30,7 @@ const getMobileClass = computed(() => {
 const getContainerClass = computed(() => {
   return [
     'h-full',
-    { 'pl-[60px]': !isMobile.value && !collapsed.value }, // 60px (新侧边栏) + 260px (原侧边栏) = 320px
-    { 'pl-[60px]': !isMobile.value && collapsed.value },  // 只有新侧边栏的宽度
+    { 'pl-[60px]': !isMobile.value }, // 只为新左侧面板留出空间，原侧边栏使用相对定位
   ]
 })
 
@@ -57,5 +57,6 @@ const getContentClass = computed(() => {
       </NLayout>
     </div>
     <LeftSider v-if="isMobile" />
+<!--    <Permission :visible="needPermission" />-->
   </div>
 </template>

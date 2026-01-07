@@ -48,6 +48,12 @@ function handleClearAll() {
 }
 
 const getMobileClass = computed<CSSProperties>(() => {
+  if (isMobile.value) {
+    return {
+      position: 'fixed',
+      zIndex: 50,
+    }
+  }
   return {}
 })
 
@@ -79,6 +85,7 @@ watch(
     :width="260"
     :show-trigger="isMobile ? false : 'arrow-circle'"
     collapse-mode="transform"
+    position="relative"
     bordered
     :style="getMobileClass"
     @update-collapsed="handleUpdateCollapsed"
@@ -108,5 +115,8 @@ watch(
       <Footer />
     </div>
   </NLayoutSider>
+  <template v-if="isMobile">
+    <div v-show="!collapsed" class="fixed inset-0 z-40 w-full h-full bg-black/40" @click="handleUpdateCollapsed" />
+  </template>
   <PromptStore v-model:visible="show" />
 </template>

@@ -132,7 +132,6 @@ function goToKnowledge() {
   top: 0;
   left: 0;
   box-shadow: 2px 0 4px rgba(0,0,0,0.05);
-  box-sizing: border-box;
 }
 
 .icons-container {
