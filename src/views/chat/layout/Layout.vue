@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { NLayout, NLayoutContent } from 'naive-ui'
 import { useRouter } from 'vue-router'
 import Sider from './sider/index.vue'
+import LeftSider from './sider/LeftSider.vue'
 import Permission from './Permission.vue'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { useAppStore, useAuthStore, useChatStore } from '@/store'
@@ -18,7 +19,6 @@ const { isMobile } = useBasicLayout()
 
 const collapsed = computed(() => appStore.siderCollapsed)
 
-const needPermission = computed(() => !!authStore.session?.auth && !authStore.token)
 
 const getMobileClass = computed(() => {
   if (isMobile.value)
@@ -29,7 +29,16 @@ const getMobileClass = computed(() => {
 const getContainerClass = computed(() => {
   return [
     'h-full',
-    { 'pl-[260px]': !isMobile.value && !collapsed.value },
+    { 'pl-[60px]': !isMobile.value && !collapsed.value }, // 60px (新侧边栏) + 260px (原侧边栏) = 320px
+    { 'pl-[60px]': !isMobile.value && collapsed.value },  // 只有新侧边栏的宽度
+  ]
+})
+
+// 为移动端内容区域添加底部边距，为移动端导航栏留出空间
+const getContentClass = computed(() => {
+  return [
+    'h-full',
+    { 'mb-[60px]': isMobile.value },
   ]
 })
 </script>
@@ -38,14 +47,15 @@ const getContainerClass = computed(() => {
   <div class="h-full dark:bg-[#24272e] transition-all" :class="[isMobile ? 'p-0' : 'p-4']">
     <div class="h-full overflow-hidden" :class="getMobileClass">
       <NLayout class="z-40 transition" :class="getContainerClass" has-sider>
+        <LeftSider v-if="!isMobile" />
         <Sider />
-        <NLayoutContent class="h-full">
+        <NLayoutContent :class="getContentClass">
           <RouterView v-slot="{ Component, route }">
             <component :is="Component" :key="route.fullPath" />
           </RouterView>
         </NLayoutContent>
       </NLayout>
     </div>
-<!--    <Permission :visible="needPermission" />-->
+    <LeftSider v-if="isMobile" />
   </div>
 </template>

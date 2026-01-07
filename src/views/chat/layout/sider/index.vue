@@ -27,9 +27,7 @@ function handleAdd() {
     appStore.setSiderCollapsed(true)
 }
 
-function toKnowledge() {
-  router.push({ name: 'Knowledge' })
-}
+// 移除 toKnowledge 函数，因为我们现在使用新的左侧面板
 
 function handleUpdateCollapsed() {
   appStore.setSiderCollapsed(!collapsed.value)
@@ -50,12 +48,6 @@ function handleClearAll() {
 }
 
 const getMobileClass = computed<CSSProperties>(() => {
-  if (isMobile.value) {
-    return {
-      position: 'fixed',
-      zIndex: 50,
-    }
-  }
   return {}
 })
 
@@ -87,7 +79,6 @@ watch(
     :width="260"
     :show-trigger="isMobile ? false : 'arrow-circle'"
     collapse-mode="transform"
-    position="absolute"
     bordered
     :style="getMobileClass"
     @update-collapsed="handleUpdateCollapsed"
@@ -99,11 +90,7 @@ watch(
             {{ $t('chat.newChatButton') }}
           </NButton>
         </div>
-				<div class="pl-4 pr-4 pb-4">
-					<NButton  block @click="toKnowledge">
-						{{ $t('knowledge.manage') }}
-					</NButton>
-				</div>
+        <!-- 删除知识库管理按钮 -->
         <div class="flex-1 min-h-0 pb-4 overflow-hidden">
           <List />
         </div>
@@ -121,8 +108,5 @@ watch(
       <Footer />
     </div>
   </NLayoutSider>
-  <template v-if="isMobile">
-    <div v-show="!collapsed" class="fixed inset-0 z-40 w-full h-full bg-black/40" @click="handleUpdateCollapsed" />
-  </template>
   <PromptStore v-model:visible="show" />
 </template>
