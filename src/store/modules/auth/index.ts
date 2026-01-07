@@ -4,53 +4,44 @@ import {
 	removeRefreshToken,
 	setAccessToken,
 	setRefreshToken,
+	getAccessToken,
+	getRefreshToken,
 } from './helper'
 import {store} from '@/store/helper'
-import {fetchUserInfo} from "@/api";
-// import {fetchSession} from '@/api'
-//
-// interface SessionResponse {
-// 	auth: boolean
-// 	model: 'ChatGPTAPI' | 'ChatGPTUnofficialProxyAPI'
-// }
+import {fetchUserInfo } from "@/api";
 
 export interface AuthState {
 	isAuth: boolean
 	accessToken: string | null
 	refreshToken: string | null
-
 }
 
 export const useAuthStore = defineStore('auth-store', {
 	state: (): AuthState => ({
 		isAuth: false,
-		accessToken: '',
-		refreshToken: '',
+		accessToken: getAccessToken() || '',
+		refreshToken: getRefreshToken() || '',
 	}),
 
 	getters: {
-
+		token(): string | null {
+			return this.accessToken
+		}
 	},
 
 	actions: {
-		// async getSession() {
-		// 	try {
-		// 		const {data} = await fetchSession<SessionResponse>()
-		// 		this.session = {...data}
-		// 		return Promise.resolve(data)
-		// 	} catch (error) {
-		// 		return Promise.reject(error)
-		// 	}
-		// },
-
 		setAccessToken(accessToken: string) {
 			this.accessToken = accessToken
 			setAccessToken(accessToken)
+			if (accessToken) {
+				this.isAuth = true
+			}
 		},
 
 		removeAccessToken() {
 			this.accessToken = ''
 			removeAccessToken()
+			this.isAuth = false
 		},
 		setRefreshToken( refreshToken: string) {
 			this.refreshToken = refreshToken
@@ -61,12 +52,22 @@ export const useAuthStore = defineStore('auth-store', {
 			 removeRefreshToken()
 		},
 
+		setToken(token: string) {
+			this.setAccessToken(token)
+		},
+		
+		removeToken() {
+			this.removeAccessToken()
+		},
+
 		async initializeAuth() {
-			if (this.accessToken) {
+			const token = getAccessToken()
+			if (token) {
 				try {
 					// 验证令牌有效性
 					const response = await fetchUserInfo()
 					if (response.code === 200) {
+						this.accessToken = token
 						this.isAuth = true
 					} else {
 						// 令牌无效，清除它们
@@ -77,7 +78,6 @@ export const useAuthStore = defineStore('auth-store', {
 					this.removeAccessToken()
 					this.removeRefreshToken()
 				}
-
 			}
 		}
 	},

@@ -19,7 +19,6 @@ const { isMobile } = useBasicLayout()
 
 const collapsed = computed(() => appStore.siderCollapsed)
 
-const needPermission = computed(() => !!authStore.session?.auth && !authStore.token)
 
 const getMobileClass = computed(() => {
   if (isMobile.value)
@@ -57,6 +56,5 @@ const getContentClass = computed(() => {
       </NLayout>
     </div>
     <LeftSider v-if="isMobile" />
-<!--    <Permission :visible="needPermission" />-->
   </div>
 </template>
