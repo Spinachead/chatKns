@@ -23,6 +23,10 @@ const props = defineProps<Props>()
 const { isMobile } = useBasicLayout()
 
 const textRef = ref<HTMLElement>()
+const sourcesRef = ref<HTMLElement>()
+
+// 存储事件处理函数的引用，以便稍后移除
+const copyEventHandlers = new Map<HTMLElement, () => void>()
 
 const mdi = new MarkdownIt({
   html: false,
@@ -71,6 +75,21 @@ const formattedSources = computed(() => {
   return props.sources.filter(source => source.includes('出处'))
 })
 
+// 将sources中的文本转换为带链接的HTML
+const processedSources = computed(() => {
+  if (!props.sources || props.sources.length === 0 || props.loading) {
+    return []
+  }
+  
+  const filteredSources = props.sources.filter(source => source.includes('出处'))
+  
+  return filteredSources.map(source => {
+    // 使用正则表达式查找链接并将其包装在<a>标签中
+    const linkRegex = /(https?:\/\/[^\s\)]+)/g;
+    return source.replace(linkRegex, '<a href="$1" target="_blank" rel="noopener" class="text-blue-500 hover:underline">$1</a>');
+  })
+})
+
 function highlightBlock(str: string, lang?: string) {
   return `<pre class="code-block-wrapper"><div class="code-block-header"><span class="code-block-header__lang">${lang}</span><span class="code-block-header__copy">${t('chat.copyCode')}</span></div><code class="hljs code-block-body ${lang}">${str}</code></pre>`
 }
@@ -79,7 +98,11 @@ function addCopyEvents() {
   if (textRef.value) {
     const copyBtn = textRef.value.querySelectorAll('.code-block-header__copy')
     copyBtn.forEach((btn) => {
-      btn.addEventListener('click', () => {
+      // 移除可能已存在的事件处理器
+      removeCopyEventListener(btn as HTMLElement)
+      
+      // 创建新的事件处理函数
+      const handler = () => {
         const code = btn.parentElement?.nextElementSibling?.textContent
         if (code) {
           copyToClip(code).then(() => {
@@ -89,8 +112,22 @@ function addCopyEvents() {
             }, 1000)
           })
         }
-      })
+      }
+      
+      // 保存事件处理函数的引用
+      copyEventHandlers.set(btn as HTMLElement, handler)
+      
+      // 添加事件监听器
+      btn.addEventListener('click', handler)
     })
+  }
+}
+
+function removeCopyEventListener(btn: HTMLElement) {
+  const existingHandler = copyEventHandlers.get(btn)
+  if (existingHandler) {
+    btn.removeEventListener('click', existingHandler)
+    copyEventHandlers.delete(btn)
   }
 }
 
@@ -98,7 +135,7 @@ function removeCopyEvents() {
   if (textRef.value) {
     const copyBtn = textRef.value.querySelectorAll('.code-block-header__copy')
     copyBtn.forEach((btn) => {
-      btn.removeEventListener('click', () => { })
+      removeCopyEventListener(btn as HTMLElement)
     })
   }
 }
@@ -155,9 +192,9 @@ onUnmounted(() => {
       <div v-else class="whitespace-pre-wrap" v-text="text" />
       
       <!-- 显示sources信息，仅在非加载状态下显示 -->
-      <div v-if="!inversion && formattedSources.length > 0" class="mt-3 pt-2 border-t border-gray-200 dark:border-gray-700 text-sm">
+      <div v-if="!inversion && processedSources.length > 0" class="mt-3 pt-2 border-t border-gray-200 dark:border-gray-700 text-sm">
         <div class="font-semibold mb-1 text-gray-700 dark:text-gray-300">{{ $t('chat.sources') }}:</div>
-        <div v-for="(source, index) in formattedSources" :key="index" class="text-gray-600 dark:text-gray-400">
+        <div v-for="(source, index) in processedSources" :key="index" class="text-gray-600 dark:text-gray-400">
           <div class="source-content" v-html="source" />
         </div>
       </div>

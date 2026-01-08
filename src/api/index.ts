@@ -33,7 +33,11 @@ export function fetchChatAPIProcess<T = any>(
     prompt: params.prompt,
     options: params.options,
     query: params.prompt,
-    kb_name: settingStore.kb_name
+    kb_name: settingStore.kb_name,
+	top_k: settingStore.top_k,
+	score_threshold: settingStore.score_threshold,
+	return_direct: settingStore.return_direct,
+	temperature: settingStore.temperature,
   }
 	console.log("这是请求data", data)
 
