@@ -53,6 +53,7 @@ export default {
     preview: 'Preview',
     showRawText: 'Show as raw text',
     thinking: 'Thinking...',
+    sources: 'Sources', // 添加sources翻译
   },
   setting: {
     setting: 'Setting',

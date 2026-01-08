@@ -15,6 +15,7 @@ interface Props {
   text?: string
   loading?: boolean
   asRawText?: boolean
+  sources?: string[] // 添加sources字段
 }
 
 const props = defineProps<Props>()
@@ -59,6 +60,15 @@ const text = computed(() => {
     return mdi.render(escapedText)
   }
   return value
+})
+
+// 计算格式化后的sources，只在非加载状态下显示
+const formattedSources = computed(() => {
+  if (!props.sources || props.sources.length === 0 || props.loading) {
+    return []
+  }
+  // 过滤出包含"出处"的条目
+  return props.sources.filter(source => source.includes('出处'))
 })
 
 function highlightBlock(str: string, lang?: string) {
@@ -143,10 +153,46 @@ onUnmounted(() => {
         <div v-else class="whitespace-pre-wrap" v-text="text" />
       </div>
       <div v-else class="whitespace-pre-wrap" v-text="text" />
+      
+      <!-- 显示sources信息，仅在非加载状态下显示 -->
+      <div v-if="!inversion && formattedSources.length > 0" class="mt-3 pt-2 border-t border-gray-200 dark:border-gray-700 text-sm">
+        <div class="font-semibold mb-1 text-gray-700 dark:text-gray-300">{{ $t('chat.sources') }}:</div>
+        <div v-for="(source, index) in formattedSources" :key="index" class="text-gray-600 dark:text-gray-400">
+          <div class="source-content" v-html="source" />
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <style lang="less">
 @import url(./style.less);
+
+// 为sources中的链接添加样式
+.source-content a {
+  color: #4f555e;
+  text-decoration: underline;
+  cursor: pointer;
+  word-break: break-all;
+  
+  &:hover {
+    color: #0960bd;
+  }
+  
+  &:active {
+    color: #0960bd;
+  }
+}
+
+.dark .source-content a {
+  color: #a0a0a0;
+  
+  &:hover {
+    color: #2080f0;
+  }
+  
+  &:active {
+    color: #2080f0;
+  }
+}
 </style>

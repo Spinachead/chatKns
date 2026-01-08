@@ -8,6 +8,7 @@ declare namespace Chat {
 		loading?: boolean
 		conversationOptions?: ConversationRequest | null
 		requestOptions: { prompt: string; options?: ConversationRequest | null }
+		sources?: string[] // 添加sources字段
 	}
 
 	interface History {
@@ -42,5 +43,6 @@ declare namespace Chat {
 		parentMessageId: string
 		role: string
 		text: string
+		sources?: string[] // 添加sources字段到响应类型
 	}
 }

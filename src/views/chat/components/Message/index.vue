@@ -15,6 +15,7 @@ interface Props {
   inversion?: boolean
   error?: boolean
   loading?: boolean
+  sources?: string[] // 添加sources字段
 }
 
 interface Emit {
@@ -119,6 +120,7 @@ async function handleCopy() {
           :text="text"
           :loading="loading"
           :as-raw-text="asRawText"
+          :sources="sources"
         />
         <div class="flex flex-col">
           <button

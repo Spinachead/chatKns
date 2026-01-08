@@ -53,6 +53,7 @@ export default {
     preview: '预览',
     showRawText: '显示原文',
     thinking: '思考中...',
+    sources: '参考资料', // 添加sources翻译
   },
   setting: {
     setting: '设置',

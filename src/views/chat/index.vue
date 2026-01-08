@@ -126,6 +126,7 @@ async function onConversation() {
 			error: false,
 			conversationOptions: null,
 			requestOptions: { prompt: message, options: { ...options } },
+			sources: [] // 添加sources字段
 		},
 	)
 	scrollToBottom()
@@ -149,6 +150,10 @@ async function onConversation() {
 							const content = data.choices[0]?.delta?.content ?? ''
 							// 修复打字机效果，累积之前的内容而不是替换
 							lastText = lastText + content
+							
+							// 提取sources信息
+							const sources = data.sources || []
+							
 							updateChat(
 								+uuid,
 								dataSources.value.length - 1,
@@ -160,6 +165,7 @@ async function onConversation() {
 									loading: true,
 									conversationOptions: { conversationId: data.id, parentMessageId: data.message_id },
 									requestOptions: { prompt: message, options: { ...options } },
+									sources: sources // 保存sources信息
 								},
 							)
 
@@ -196,7 +202,7 @@ async function onConversation() {
 
 		const currentChat = getChatByUuidAndIndex(+uuid, dataSources.value.length - 1)
 
-		if (currentChat?.text && currentChat.text !== '') {
+		if (currentChat?.text && currentChat?.text !== '') {
 			updateChatSome(
 				+uuid,
 				dataSources.value.length - 1,
@@ -220,6 +226,7 @@ async function onConversation() {
 				loading: false,
 				conversationOptions: null,
 				requestOptions: { prompt: message, options: { ...options } },
+				sources: [] // 添加sources字段
 			},
 		)
 		scrollToBottomIfAtBottom()
@@ -256,6 +263,7 @@ async function onRegenerate(index: number) {
 			loading: true,
 			conversationOptions: null,
 			requestOptions: { prompt: message, options: { ...options } },
+			sources: [] // 添加sources字段
 		},
 	)
 
@@ -278,6 +286,9 @@ async function onRegenerate(index: number) {
 							try {
 								const dataStr = line.substring(5).trim()
 								const data = JSON.parse(dataStr)
+								
+								// 提取sources信息
+								const sources = data.sources || []
 
 								updateChat(
 									+uuid,
@@ -290,6 +301,7 @@ async function onRegenerate(index: number) {
 										loading: true,
 										conversationOptions: { conversationId: data.conversationId, parentMessageId: data.message_id },
 										requestOptions: { prompt: message, options: { ...options } },
+										sources: sources // 保存sources信息
 									},
 								)
 
@@ -336,6 +348,7 @@ async function onRegenerate(index: number) {
 				loading: false,
 				conversationOptions: null,
 				requestOptions: { prompt: message, options: { ...options } },
+				sources: [] // 添加sources字段
 			},
 		)
 	} finally {
@@ -540,7 +553,7 @@ function saveKnowledgeBaseSettings() {
 							<div>
 								<Message v-for="(item, index) of dataSources" :key="index" :date-time="item.dateTime"
 									:text="item.text" :inversion="item.inversion" :error="item.error"
-									:loading="item.loading" @regenerate="onRegenerate(index)"
+									:loading="item.loading" :sources="item.sources" @regenerate="onRegenerate(index)"
 									@delete="handleDelete(index)" />
 								<!-- 未登录状态下始终显示登录按钮 -->
 								<div v-if="!isLoggedIn" class="flex justify-center mt-4">
