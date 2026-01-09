@@ -141,42 +141,58 @@ async function onConversation() {
 				onDownloadProgress: ({ event }) => {
 					const xhr = event.target
 					const { responseText } = xhr
+					
 					// 处理SSE格式的数据 (data: {...})
-					const lines = responseText.split('\n')
+					// 修复：跟踪已处理的文本长度，避免重复处理
+					if (!xhr.lastProcessedLength) {
+						xhr.lastProcessedLength = 0
+					}
+					
+					const newResponseText = responseText.substring(xhr.lastProcessedLength)
+					xhr.lastProcessedLength = responseText.length
+
+					const lines = newResponseText.split('\n')
 					for (const line of lines) {
 						if (line.startsWith('data:')) {
-							const dataStr = line.substring(5).trim()
-							const data = JSON.parse(dataStr)
-							const content = data.choices[0]?.delta?.content ?? ''
-							// 修复打字机效果，累积之前的内容而不是替换
-							lastText = lastText + content
-							
-							// 提取sources信息
-							const sources = data.sources || []
-							
-							updateChat(
-								+uuid,
-								dataSources.value.length - 1,
-								{
-									dateTime: new Date().toLocaleString(),
-									text: lastText,
-									inversion: false,
-									error: false,
-									loading: true,
-									conversationOptions: { conversationId: data.id, parentMessageId: data.message_id },
-									requestOptions: { prompt: message, options: { ...options } },
-									sources: sources // 保存sources信息
-								},
-							)
+							try {
+								const dataStr = line.substring(5).trim()
+								if (!dataStr) continue
+								
+								const data = JSON.parse(dataStr)
+								const content = data.choices[0]?.delta?.content ?? ''
+								
+								// 更新lastText累积内容
+								lastText = lastText + content
+								
+								// 提取sources信息
+								const sources = data.sources || []
 
-							if (openLongReply && data.choices[0]?.finish_reason === 'length') {
-								options.parentMessageId = data.message_id
-								// 保持lastText累积的内容
-								message = ''
-								return fetchChatAPIOnce()
+								updateChat(
+									+uuid,
+									dataSources.value.length - 1,
+									{
+										dateTime: new Date().toLocaleString(),
+										text: lastText,
+										inversion: false,
+										error: false,
+										loading: true,
+										conversationOptions: { conversationId: data.id, parentMessageId: data.message_id },
+										requestOptions: { prompt: message, options: { ...options } },
+										sources: sources // 保存sources信息
+									},
+								)
+
+								if (openLongReply && data.choices[0]?.finish_reason === 'length') {
+									options.parentMessageId = data.message_id
+									// lastText已包含当前内容
+									message = ''
+									return fetchChatAPIOnce()
+								}
+
+								scrollToBottomIfAtBottom()
+							} catch (error) {
+								//
 							}
-							scrollToBottomIfAtBottom()
-
 						}
 					}
 				},
@@ -280,12 +296,26 @@ async function onRegenerate(index: number) {
 					console.log("这是responseText", responseText)
 
 					// 处理SSE格式的数据 (data: {...})
-					const lines = responseText.split('\n')
+					// 修复：跟踪已处理的文本长度，避免重复处理
+					if (!xhr.lastProcessedLength) {
+						xhr.lastProcessedLength = 0
+					}
+					
+					const newResponseText = responseText.substring(xhr.lastProcessedLength)
+					xhr.lastProcessedLength = responseText.length
+
+					const lines = newResponseText.split('\n')
 					for (const line of lines) {
 						if (line.startsWith('data:')) {
 							try {
 								const dataStr = line.substring(5).trim()
+								if (!dataStr) continue
+								
 								const data = JSON.parse(dataStr)
+								const content = data.choices[0]?.delta?.content ?? ''
+								
+								// 更新lastText累积内容
+								lastText = lastText + content
 								
 								// 提取sources信息
 								const sources = data.sources || []
@@ -295,7 +325,7 @@ async function onRegenerate(index: number) {
 									index,
 									{
 										dateTime: new Date().toLocaleString(),
-										text: lastText + (data.choices[0]?.delta?.content ?? ''),
+										text: lastText,
 										inversion: false,
 										error: false,
 										loading: true,
@@ -307,7 +337,7 @@ async function onRegenerate(index: number) {
 
 								if (openLongReply && data.choices[0]?.finish_reason === 'length') {
 									options.parentMessageId = data.message_id
-									lastText = data.choices[0]?.delta?.content ?? ''
+									// lastText已包含当前内容
 									message = ''
 									return fetchChatAPIOnce()
 								}
