@@ -3,16 +3,17 @@ import type { CSSProperties } from 'vue'
 import { computed, ref, watch } from 'vue'
 import { NButton, NLayoutSider, useDialog } from 'naive-ui'
 import List from './List.vue'
+import KnowledgeList from './KnowledgeList.vue'
 import Footer from './Footer.vue'
 import { useAppStore, useChatStore } from '@/store'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { PromptStore, SvgIcon } from '@/components/common'
 import { t } from '@/locales'
-import { useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 
 const appStore = useAppStore()
 const chatStore = useChatStore()
-const router = useRouter()
+const route = useRoute()
 
 const dialog = useDialog()
 
@@ -27,7 +28,12 @@ function handleAdd() {
     appStore.setSiderCollapsed(true)
 }
 
-// 移除 toKnowledge 函数，因为我们现在使用新的左侧面板
+// 添加新知识库
+function handleAddKnowledge() {
+  appStore.setShowCreateKnowledgeBase(true)
+  if (isMobile.value)
+    appStore.setSiderCollapsed(true)
+}
 
 function handleUpdateCollapsed() {
   appStore.setSiderCollapsed(!collapsed.value)
@@ -76,6 +82,9 @@ watch(
     flush: 'post',
   },
 )
+
+// 检测当前是否是知识库路由
+const isKnowledgeRoute = computed(() => route.name === 'Knowledge')
 </script>
 
 <template>
@@ -85,32 +94,46 @@ watch(
     :width="260"
     :show-trigger="isMobile ? false : 'arrow-circle'"
     collapse-mode="transform"
-    position="relative"
+    position="static"
     bordered
     :style="getMobileClass"
     @update-collapsed="handleUpdateCollapsed"
   >
     <div class="flex flex-col h-full" :style="mobileSafeArea">
       <main class="flex flex-col flex-1 min-h-0">
-        <div class="p-4">
-          <NButton dashed block @click="handleAdd">
-            {{ $t('chat.newChatButton') }}
-          </NButton>
-        </div>
-        <!-- 删除知识库管理按钮 -->
-        <div class="flex-1 min-h-0 pb-4 overflow-hidden">
-          <List />
-        </div>
-        <div class="flex items-center p-4 space-x-4">
-          <div class="flex-1">
-            <NButton block @click="show = true">
-              {{ $t('store.siderButton') }}
+        <!-- 聊天模式 -->
+        <template v-if="!isKnowledgeRoute">
+          <div class="p-4">
+            <NButton dashed block @click="handleAdd">
+              {{ $t('chat.newChatButton') }}
             </NButton>
           </div>
-          <NButton @click="handleClearAll">
-            <SvgIcon icon="ri:close-circle-line" />
-          </NButton>
-        </div>
+          <div class="flex-1 min-h-0 pb-4 overflow-hidden">
+            <List />
+          </div>
+          <div class="flex items-center p-4 space-x-4">
+            <div class="flex-1">
+              <NButton block @click="show = true">
+                {{ $t('store.siderButton') }}
+              </NButton>
+            </div>
+            <NButton @click="handleClearAll">
+              <SvgIcon icon="ri:close-circle-line" />
+            </NButton>
+          </div>
+        </template>
+        
+        <!-- 知识库模式 -->
+        <template v-else>
+          <div class="p-4">
+            <NButton dashed block @click="handleAddKnowledge">
+              新建知识库
+            </NButton>
+          </div>
+          <div class="flex-1 min-h-0 pb-4 overflow-hidden">
+            <KnowledgeList />
+          </div>
+        </template>
       </main>
       <Footer />
     </div>

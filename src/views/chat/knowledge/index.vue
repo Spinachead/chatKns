@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, ref, computed, h} from 'vue'
+import {onMounted, ref, computed, h, watch} from 'vue'
 import {
 	NCard,
 	NUpload,
@@ -25,11 +25,10 @@ import {
 	createKnowledgeBase,
 	deleteKnowledgeBase,
 	fetchDeleteDocs,
-	fetchListFiles,
-	fetchListKnowledgeBases,
 	fetchUploadFile
 } from "@/api";
 import {useMessage} from 'naive-ui'
+import {useAppStore, useKnowledgeStore} from '@/store'
 
 onMounted(() => {
 	fetchKnowledgeBase()
@@ -47,8 +46,38 @@ const chunkOverlap = ref(150)
 const zh_title_enhance = ref(false)
 const pagination = {pageSize: 10}
 const message = useMessage()
+const appStore = useAppStore()
+const knowledgeStore = useKnowledgeStore()
 const showCreate = ref(false)
-const currentKnowledgeBase = ref<any>('samples')
+
+// 监听store中的showCreateKnowledgeBase状态变化
+watch(
+  () => appStore.showCreateKnowledgeBase,
+  (newValue) => {
+    showCreate.value = newValue
+  },
+  { immediate: true }
+)
+
+// 当弹窗关闭时，更新store中的状态
+watch(
+  showCreate,
+  (newValue) => {
+    if (!newValue) {
+      appStore.setShowCreateKnowledgeBase(false)
+    }
+  }
+)
+
+// 从store获取当前知识库
+const currentKnowledgeBase = computed(() => knowledgeStore.currentKnowledgeBase)
+
+// 从store获取知识库列表
+const baseOptions = computed(() => knowledgeStore.knowledgeBases)
+
+// 从store获取知识库文件列表
+const tableData = computed(() => knowledgeStore.knowledgeBaseFiles)
+
 const rules: FormRules = {
 	knowledge_base_name: [{required: true, message: '请选择知识库名称'}],
 	vector_store_type: [{required: true, message: '请选择向量库类型'}],
@@ -61,8 +90,19 @@ const modelRef = ref<ModelType>({
 	vector_store_type: '',
 	embedding_model: ''
 })
-const baseOptions = ref([])
 const fileList = ref<UploadFileInfo[]>([])
+
+// 监听store中的currentKnowledgeBase变化，自动获取文件列表
+watch(
+  () => knowledgeStore.currentKnowledgeBase,
+  (newValue) => {
+    if (newValue) {
+      // 当左侧选中知识库变化时，自动获取对应文件列表
+      console.log('当前选中知识库变化:', newValue)
+    }
+  },
+  { immediate: true }
+)
 
 // 表格列定义
 const columns = [
@@ -144,7 +184,6 @@ const columns = [
 		}
 	}
 ]
-const tableData = ref([])
 const faissOptions = [
 	{
 		label: 'faiss',
@@ -200,22 +239,27 @@ const beforeUpload = (data: { file: UploadFileInfo; fileList: UploadFileInfo[] }
 	return true
 }
 
-function createSubmit(e: MouseEvent) {
+async function createSubmit(e: MouseEvent) {
 	e.preventDefault()
-	formRef.value?.validate((errors) => {
+	formRef.value?.validate(async (errors) => {
 		if (!errors) {
-			createKnowledgeBase({
-				knowledge_base_name: modelRef.value.knowledge_base_name,
-				kb_info: modelRef.value.kb_info,
-				vector_store_type: modelRef.value.vector_store_type,
-				embed_model: modelRef.value.embedding_model
-			}).then(res => {
-				currentKnowledgeBase.value = modelRef.value.knowledge_base_name
+			try {
+				const res = await createKnowledgeBase({
+					knowledge_base_name: modelRef.value.knowledge_base_name,
+					kb_info: modelRef.value.kb_info,
+					vector_store_type: modelRef.value.vector_store_type,
+					embed_model: modelRef.value.embedding_model
+				})
 				message.success(res.msg)
-				getFileListByBase(currentKnowledgeBase.value)
-				fetchKnowledgeBase()
+				// 创建成功后刷新知识库列表
+				await knowledgeStore.fetchKnowledgeBases()
+				// 设置当前知识库为新创建的知识库
+				await knowledgeStore.setCurrentKnowledgeBase(modelRef.value.knowledge_base_name)
 				closeCreateForm()
-			})
+			} catch (err: any) {
+				message.error(err.msg)
+				console.log(err)
+			}
 		} else {
 			message.error('验证失败')
 		}
@@ -234,85 +278,70 @@ function closeCreateForm() {
 	formRef.value?.restoreValidation()
 }
 
-// 创建一个计算属性来转换 baseOptions 的格式
-const formattedBaseOptions = computed(() => {
-	const options = baseOptions.value.map((item: any) => ({
-		label: item.kb_name,
-		value: item.kb_name
-	}))
-	// 如果还没有选中任何项且有选项可用，则默认选中第一个
-	if (options.length > 0 && currentKnowledgeBase.value === null) {
-		currentKnowledgeBase.value = options[0].value
-	}
-	return options
-})
-
 //获取知识库
-function fetchKnowledgeBase() {
-	fetchListKnowledgeBases().then(res => {
-		baseOptions.value = res.data
-		getFileListByBase(currentKnowledgeBase.value)
-	})
-}
-
-
-//获取知识库内文件
-function getFileListByBase(base: string) {
-	console.log("这是选择的知识库", base)
-	fetchListFiles({knowledge_base_name: base}).then(res => {
-		tableData.value = res.data
-	}).catch(err => {
-		console.log(err)
-	})
+async function fetchKnowledgeBase() {
+	await knowledgeStore.fetchKnowledgeBases()
 }
 
 //添加文件到知识库
-function uploadFiles() {
+async function uploadFiles() {
 	// 从 fileList 中提取实际的 File 对象
 	const files = fileList.value
 		.map(item => item.file)
 		.filter(file => file !== undefined) as File[];
 
-	fetchUploadFile({
-		files: files,
-		knowledge_base_name: currentKnowledgeBase.value,
-		chunk_size: chunkSize.value,
-		chunk_overlap: chunkOverlap.value,
-		zh_title_enhance: zh_title_enhance.value
-	}).then(res => {
+	try {
+		const res = await fetchUploadFile({
+			files: files,
+			knowledge_base_name: currentKnowledgeBase.value as string,
+			chunk_size: chunkSize.value,
+			chunk_overlap: chunkOverlap.value,
+			zh_title_enhance: zh_title_enhance.value
+		})
 		message.success(res.msg)
-		getFileListByBase(currentKnowledgeBase.value)
-	}).catch(err => {
+		// 上传成功后刷新当前知识库的文件列表
+		await knowledgeStore.refreshCurrentKnowledgeBaseFiles()
+	} catch (err) {
 		console.log(err)
-	})
+	}
 }
 
 //删除知识库中的文件
-function deleteDocs(item: any) {
+async function deleteDocs(item: any) {
 	console.log("删除文件:", item)
-	fetchDeleteDocs({
-		knowledge_base_name: currentKnowledgeBase.value,
-		file_names: [item.file_name],
-		delete_content: true,
-		not_refresh_vs_cache: true
-	}).then(res => {
+	try {
+		const res = await fetchDeleteDocs({
+			knowledge_base_name: currentKnowledgeBase.value as string,
+			file_names: [item.file_name],
+			delete_content: true,
+			not_refresh_vs_cache: true
+		})
 		message.success(res.msg)
-		getFileListByBase(currentKnowledgeBase.value)
-	})
+		// 删除成功后刷新当前知识库的文件列表
+		await knowledgeStore.refreshCurrentKnowledgeBaseFiles()
+	} catch (err) {
+		console.log(err)
+	}
 }
 
-function deleteKnBase() {
-	deleteKnowledgeBase({
-		knowledge_base_name: currentKnowledgeBase.value
-	}).then(res => {
+async function deleteKnBase() {
+	try {
+		const res = await deleteKnowledgeBase({
+			knowledge_base_name: currentKnowledgeBase.value as string
+		})
 		message.success(res.msg)
-		currentKnowledgeBase.value = null
-		fetchKnowledgeBase()
-	}).catch(err => {
+		// 删除成功后刷新知识库列表
+		await knowledgeStore.fetchKnowledgeBases()
+		// 如果删除的是当前选中的知识库，则重新选择第一个知识库
+		if (knowledgeStore.knowledgeBases.length > 0) {
+			await knowledgeStore.setCurrentKnowledgeBase(knowledgeStore.knowledgeBases[0].kb_name)
+		} else {
+			knowledgeStore.currentKnowledgeBase = null
+		}
+	} catch (err: any) {
 		message.error(err.msg)
 		console.log(err)
-	})
-
+	}
 }
 </script>
 
@@ -320,13 +349,7 @@ function deleteKnBase() {
 	<div class="h-full overflow-hidden">
 		<div class="flex flex-col w-full h-full">
 			<NCard :title="t('knowledge.manage')" class="flex-1 overflow-hidden">
-				<div class="flex justify-between">
-					<NButton @click="showCreate = true" type="primary">新建知识库</NButton>
-					<div class="flex items-center">
-						<div>当前知识库：</div>
-						<NSelect v-model:value="currentKnowledgeBase" :options="formattedBaseOptions"
-										 :on-update-value="(value) => getFileListByBase(value)" style="width: 200px"></NSelect>
-					</div>
+				<div class="flex justify-end">
 					<NPopconfirm @positive-click="deleteKnBase">
 						<template #trigger>
 							<NButton type="error">删除知识库</NButton>

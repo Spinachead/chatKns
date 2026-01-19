@@ -26,11 +26,12 @@ export interface AppState {
   siderCollapsed: boolean
   theme: Theme
   language: Language
+  showCreateKnowledgeBase: boolean
 }
 
 export function defaultSetting(): AppState {
   const language = languageMap[navigator.language]
-  return { siderCollapsed: false, theme: 'light', language }
+  return { siderCollapsed: false, theme: 'light', language, showCreateKnowledgeBase: false }
 }
 
 export function getLocalSetting(): AppState {

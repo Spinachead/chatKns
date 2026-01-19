@@ -23,6 +23,11 @@ export const useAppStore = defineStore('app-store', {
       }
     },
 
+    setShowCreateKnowledgeBase(show: boolean) {
+      this.showCreateKnowledgeBase = show
+      this.recordState()
+    },
+
     recordState() {
       setLocalSetting(this.$state)
     },
