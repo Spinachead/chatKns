@@ -29,6 +29,8 @@ import {
 } from "@/api";
 import {useMessage} from 'naive-ui'
 import {useAppStore, useKnowledgeStore} from '@/store'
+import {SvgIcon} from '@/components/common'
+
 
 onMounted(() => {
 	fetchKnowledgeBase()
@@ -49,6 +51,8 @@ const message = useMessage()
 const appStore = useAppStore()
 const knowledgeStore = useKnowledgeStore()
 const showCreate = ref(false)
+// 上传中状态
+const uploading = ref(false)
 
 // 监听store中的showCreateKnowledgeBase状态变化
 watch(
@@ -72,8 +76,9 @@ watch(
 // 从store获取当前知识库
 const currentKnowledgeBase = computed(() => knowledgeStore.currentKnowledgeBase)
 
-// 从store获取知识库列表
-const baseOptions = computed(() => knowledgeStore.knowledgeBases)
+
+// 从store获取知识库列表用于判断是否为空
+const knowledgeBases = computed(() => knowledgeStore.knowledgeBases)
 
 // 从store获取知识库文件列表
 const tableData = computed(() => knowledgeStore.knowledgeBaseFiles)
@@ -290,7 +295,20 @@ async function uploadFiles() {
 		.map(item => item.file)
 		.filter(file => file !== undefined) as File[];
 
+	// 如果没有选择文件，直接返回
+	if (files.length === 0) {
+		message.warning('请先选择要上传的文件')
+		return
+	}
+
 	try {
+		// 设置上传中状态
+		uploading.value = true
+		// 显示上传中提示
+		const uploadingMsg = message.loading('正在上传文件...', {
+			duration: 0 // 不自动关闭
+		})
+		
 		const res = await fetchUploadFile({
 			files: files,
 			knowledge_base_name: currentKnowledgeBase.value as string,
@@ -298,11 +316,20 @@ async function uploadFiles() {
 			chunk_overlap: chunkOverlap.value,
 			zh_title_enhance: zh_title_enhance.value
 		})
+		// 关闭上传中提示
+		uploadingMsg.destroy()
 		message.success(res.msg)
 		// 上传成功后刷新当前知识库的文件列表
 		await knowledgeStore.refreshCurrentKnowledgeBaseFiles()
-	} catch (err) {
+		// 清空文件列表
+		fileList.value = []
+	} catch (err: any) {
+		// 关闭上传中提示
+		message.error(err.msg || '文件上传失败')
 		console.log(err)
+	} finally {
+		// 无论成功还是失败，都设置上传状态为false
+		uploading.value = false
 	}
 }
 
@@ -349,70 +376,88 @@ async function deleteKnBase() {
 	<div class="h-full overflow-hidden">
 		<div class="flex flex-col w-full h-full">
 			<NCard :title="t('knowledge.manage')" class="flex-1 overflow-hidden">
-				<div class="flex justify-end">
-					<NPopconfirm @positive-click="deleteKnBase">
-						<template #trigger>
-							<NButton type="error">删除知识库</NButton>
-						</template>
-						<template #default>
-							<div>确定要删除当前知识库吗？ 删除后该知识库内所有文件将被删除</div>
-						</template>
-					</NPopconfirm>
+				<!-- 当知识库列表为空时，只显示新建知识库内容 -->
+				<div v-if="knowledgeBases.length === 0" class="relative">
+
+					<div class="flex items-center justify-center mt-4 text-center text-neutral-300">
+								<SvgIcon icon="ri:bubble-chart-fill" class="mr-2 text-3xl" />
+								<span >{{ t('knowledge.create') }}</span>
+					</div>
 				</div>
-
-				<div class="flex flex-col h-full pt-4">
-					<!-- 上传区域 -->
-					<NUpload
-						class="mb-6"
-						:custom-request="handleUpload"
-						:max="3"
-						v-model:file-list="fileList"
-						@before-upload="beforeUpload"
-						@finish="() => {}"
-					>
-						<NUploadDragger>
-							<div class="mb-2">
-								<NIcon size="48" class="text-gray-400">
-									<UploadFilled/>
-								</NIcon>
-							</div>
-							<div class="mb-1">{{ t('knowledge.dragUpload') }}</div>
-							<NButton size="small" type="primary">
-								{{ t('knowledge.clickUpload') }}
-							</NButton>
-						</NUploadDragger>
-					</NUpload>
-
-					<div class="overflow-y-auto" v-if="false">
-						<div class="text-lg font-bold mb-4">请输入知识库介绍</div>
-						<NInput v-model:value="modelRef.kb_info" type="textarea" @keydown.enter.prevent/>
+				
+				<!-- 当知识库列表不为空时，显示完整的知识库管理内容 -->
+				<div v-else class="h-full">
+					<div class="flex justify-end relative">
+						<!-- 上传中图标，显示在右上角 -->
+						<div v-if="uploading" class="absolute -top-2 -right-2">
+							<NIcon size="20" class="text-blue-500 animate-spin">
+								<UploadFilled/>
+							</NIcon>
+						</div>
+						<NPopconfirm @positive-click="deleteKnBase">
+							<template #trigger>
+								<NButton type="error">删除知识库</NButton>
+							</template>
+							<template #default>
+								<div>确定要删除当前知识库吗？ 删除后该知识库内所有文件将被删除</div>
+							</template>
+						</NPopconfirm>
 					</div>
 
-					<div class="overflow-y-auto pt-4">
-						<div class="text-lg font-bold mb-4">文件处理配置</div>
-						<div class="flex justify-between">
-							<div class="flex items-center">
-								<div class="pr-3">单文本最大长度:</div>
-								<NInputNumber v-model:value="chunkSize" :min="0" placeholder="请输入"></NInputNumber>
-							</div>
-							<div class="flex items-center">
-								<div class="pr-3">相邻文本重合度:</div>
-								<NInputNumber v-model:value="chunkOverlap" :min="0" placeholder="请输入"></NInputNumber>
-							</div>
-							<div class="flex items-center">
-								<div class="pr-3">开启中文标题加强:</div>
-								<NSwitch v-model:value="zh_title_enhance"/>
+					<div class="flex flex-col h-full pt-4">
+						<!-- 上传区域 -->
+						<NUpload
+							class="mb-6"
+							:custom-request="handleUpload"
+							:max="3"
+							v-model:file-list="fileList"
+							@before-upload="beforeUpload"
+							@finish="() => {}"
+						>
+							<NUploadDragger>
+								<div class="mb-2">
+									<NIcon size="48" class="text-gray-400">
+										<UploadFilled/>
+									</NIcon>
+								</div>
+								<div class="mb-1">{{ t('knowledge.dragUpload') }}</div>
+								<NButton size="small" type="primary">
+									{{ t('knowledge.clickUpload') }}
+								</NButton>
+							</NUploadDragger>
+						</NUpload>
+
+						<div class="overflow-y-auto" v-if="false">
+							<div class="text-lg font-bold mb-4">请输入知识库介绍</div>
+							<NInput v-model:value="modelRef.kb_info" type="textarea" @keydown.enter.prevent/>
+						</div>
+
+						<div class="overflow-y-auto pt-4">
+							<div class="text-lg font-bold mb-4">文件处理配置</div>
+							<div class="flex justify-between">
+								<div class="flex items-center">
+									<div class="pr-3">单文本最大长度:</div>
+									<NInputNumber v-model:value="chunkSize" :min="0" placeholder="请输入"></NInputNumber>
+								</div>
+								<div class="flex items-center">
+									<div class="pr-3">相邻文本重合度:</div>
+									<NInputNumber v-model:value="chunkOverlap" :min="0" placeholder="请输入"></NInputNumber>
+								</div>
+								<div class="flex items-center">
+									<div class="pr-3">开启中文标题加强:</div>
+									<NSwitch v-model:value="zh_title_enhance"/>
+								</div>
 							</div>
 						</div>
-					</div>
-					<div class="overflow-y-auto pt-8 w-full flex justify-center">
-						<NButton type="primary" size="large" @click="uploadFiles">添加到知识库</NButton>
-					</div>
+						<div class="overflow-y-auto pt-8 w-full flex justify-center">
+							<NButton type="primary" size="large" @click="uploadFiles">添加到知识库</NButton>
+						</div>
 
-					<div class="overflow-y-auto pt-4">
-						<div class="text-lg font-bold mb-4">知识库中已有文件</div>
-						<NDataTable :columns="columns" :data="tableData" :bordered="true" :pagination="pagination"
-												striped></NDataTable>
+						<div class="overflow-y-auto pt-4">
+							<div class="text-lg font-bold mb-4">知识库中已有文件</div>
+							<NDataTable :columns="columns" :data="tableData" :bordered="true" :pagination="pagination"
+										striped></NDataTable>
+						</div>
 					</div>
 				</div>
 				<NModal v-model:show="showCreate">
@@ -447,5 +492,19 @@ async function deleteKnBase() {
 <style scoped>
 :deep(.n-upload-trigger) {
 	width: 100%;
+}
+
+/* 旋转动画 */
+.animate-spin {
+	animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
 }
 </style>

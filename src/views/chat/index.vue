@@ -619,7 +619,7 @@ function saveKnowledgeBaseSettings() {
 						</span>
 					</HoverButton>
 					<HoverButton v-if="!isMobile" @click="showKnowledgeBaseModal = true">
-						<span class="text-xl text-[#4f555e] dark:text-white">
+						<span class="text-xl text-[#4b9e5f] dark:text-white">
 							<SvgIcon icon="ri:book-3-line" />
 						</span>
 					</HoverButton>
