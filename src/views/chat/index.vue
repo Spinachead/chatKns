@@ -13,7 +13,7 @@ import HeaderComponent from './components/Header/index.vue'
 import { HoverButton, SvgIcon, AuthModal } from '@/components/common'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { useAuthStore, useChatStore, usePromptStore, useSettingStore } from '@/store'
-import { fetchChatAPIProcess, fetchUploadFile, fetchListKnowledgeBases } from '@/api'
+import { fetchChatAPIProcess, fetchUploadFile, fetchListKnowledgeBases, fetchSocreReply } from '@/api'
 import { t } from '@/locales'
 
 let controller = new AbortController()
@@ -386,6 +386,23 @@ async function onRegenerate(index: number) {
 	}
 }
 
+async function handleLike(index: number) {
+	if (loading.value)
+		return
+
+	const { conversationOptions, conversationId, parentMessageId } = dataSources.value[index]
+
+	if (!conversationOptions)
+		return
+
+	await fetchSocreReply({
+		conversation_id: conversationId,
+		message_id: parentMessageId,
+		score: 1
+	})
+
+}
+
 function handleExport() {
 	if (loading.value)
 		return
@@ -584,7 +601,7 @@ function saveKnowledgeBaseSettings() {
 								<Message v-for="(item, index) of dataSources" :key="index" :date-time="item.dateTime"
 									:text="item.text" :inversion="item.inversion" :error="item.error"
 									:loading="item.loading" :sources="item.sources" @regenerate="onRegenerate(index)"
-									@delete="handleDelete(index)" />
+									@delete="handleDelete(index)" @like="" @dislike="" />
 								<!-- 未登录状态下始终显示登录按钮 -->
 								<div v-if="!isLoggedIn" class="flex justify-center mt-4">
 									<NButton text type="primary" @click="showAuthModal = true">

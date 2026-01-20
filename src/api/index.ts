@@ -277,3 +277,21 @@ export function fetchRefreshToken<T = any>(
 	})
 }
 
+export function fetchSocreReply<T = any>(
+	params: {
+		conversation_id: string,
+		message_id: string,
+		score: number
+	}
+) {
+	let data: Record<string, any> = {
+		conversation_id: params.conversation_id,
+		message_id: params.message_id,
+		score: params.score
+	}
+	return post<T>({
+		url: 'score_reply',
+		data: data
+	})
+}
+
