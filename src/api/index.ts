@@ -40,10 +40,8 @@ export function fetchChatAPIProcess<T = any>(
 	temperature: settingStore.temperature,
   }
 	console.log("这是请求data", data)
-
-
   return post<T>({
-    url: '/kb_chat',
+    url: '/agent_chat',
     data,
     signal: params.signal,
     onDownloadProgress: params.onDownloadProgress,
@@ -279,8 +277,8 @@ export function fetchRefreshToken<T = any>(
 
 export function fetchSocreReply<T = any>(
 	params: {
-		conversation_id: string,
-		message_id: string,
+		conversation_id?: string,
+		message_id?: string,
 		score: number
 	}
 ) {

@@ -141,13 +141,9 @@ async function onConversation() {
 				onDownloadProgress: ({ event }) => {
 					const xhr = event.target
 					const { responseText } = xhr
-					
-					// 处理SSE格式的数据 (data: {...})
-					// 修复：跟踪已处理的文本长度，避免重复处理
 					if (!xhr.lastProcessedLength) {
 						xhr.lastProcessedLength = 0
 					}
-					
 					const newResponseText = responseText.substring(xhr.lastProcessedLength)
 					xhr.lastProcessedLength = responseText.length
 
@@ -176,7 +172,7 @@ async function onConversation() {
 										inversion: false,
 										error: false,
 										loading: true,
-										conversationOptions: { conversationId: data.id, parentMessageId: data.message_id },
+										conversationOptions: { conversationId: data.conversationId, parentMessageId: data.message_id },
 										requestOptions: { prompt: message, options: { ...options } },
 										sources: sources // 保存sources信息
 									},
@@ -389,19 +385,38 @@ async function onRegenerate(index: number) {
 async function handleLike(index: number) {
 	if (loading.value)
 		return
-
-	const { conversationOptions, conversationId, parentMessageId } = dataSources.value[index]
+	const { conversationOptions } = dataSources.value[index]
 
 	if (!conversationOptions)
 		return
 
 	await fetchSocreReply({
-		conversation_id: conversationId,
-		message_id: parentMessageId,
-		score: 1
+		conversation_id: conversationOptions.conversationId,
+		message_id: conversationOptions.parentMessageId,
+		score: 100
+	}).then(() => {
+		ms.success(t('common.success'))
 	})
-
 }
+
+async function handleDislike(index: number) {
+	if (loading.value)
+		return
+	const { conversationOptions } = dataSources.value[index]
+
+	if (!conversationOptions)
+		return
+
+	await fetchSocreReply({
+		conversation_id: conversationOptions.conversationId,
+		message_id: conversationOptions.parentMessageId,
+		score: 0
+	}).then(() => {
+		ms.success(t('common.success'))
+	})
+}
+
+
 
 function handleExport() {
 	if (loading.value)
@@ -601,7 +616,7 @@ function saveKnowledgeBaseSettings() {
 								<Message v-for="(item, index) of dataSources" :key="index" :date-time="item.dateTime"
 									:text="item.text" :inversion="item.inversion" :error="item.error"
 									:loading="item.loading" :sources="item.sources" @regenerate="onRegenerate(index)"
-									@delete="handleDelete(index)" @like="" @dislike="" />
+									@delete="handleDelete(index)" @like="handleLike(index)" @dislike="handleDislike(index)" />
 								<!-- 未登录状态下始终显示登录按钮 -->
 								<div v-if="!isLoggedIn" class="flex justify-center mt-4">
 									<NButton text type="primary" @click="showAuthModal = true">
